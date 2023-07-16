@@ -15,7 +15,9 @@ install.packages("ROCR")
 install.packages("ggplot2")
 install.packages('forestploter')
 install.packages("ggtext")
+install.packages("officer")
 
+library(officer)
 library(grid)
 library(forestploter)
 library(mice)
@@ -64,7 +66,7 @@ for (i in 1:354) {
   else
     df$Age[i] = 1L 
 }
-print(df$Ag)
+#print(df$Ag)
 df$Age <- factor(df$Age,,levels = c(0,1), labels = c("<60",">=60"))
 
 
@@ -81,7 +83,7 @@ df$Age <- factor(df$Age,,levels = c(0,1), labels = c("<60",">=60"))
 #basic graph
 ft <- gaze(Outcome~.,data=df) %>%myft()
 print(ft)
-#table2docx(ft,target="basic graph")
+table2docx(ft,target="Basic_Graph")
 
 #train and test data
 ind <- createDataPartition(df$Outcome, p=1, list = FALSE)
@@ -105,20 +107,25 @@ fit <- lrm(input_formula,
           data = df, x = TRUE, y = TRUE)
 train_fit <- lrm(input_formula,
            data = train_data, x = TRUE, y = TRUE)
-train_fit
+print(train_fit)
+#doc_fit = read_docx()
+# doc_fit = body_add_flextable(doc_fit, train_fit)
+# print(doc_fit,"Logistic_Regression_Model.docx")
+# table2docx(train_fit,target="Logistic_Regression_Model")
 
 #绘制训练集列线图
+png(filename="Line_Graph.png", ,width=3*600,height=3*600, res=72*3)
 nom <- nomogram(train_fit,
                 fun = plogis,
                 lp=F,
                 funlabel="Risk of Outcome")
 plot(nom,lp=FALSE)
+dev.off()
 
 #训练集预测
 train_pred <- predict(train_fit,
                       newdata=train_data,
                       type = "fitted")
-
 #测试集预测
 test_pred <- predict(test_fit,
                      newdata=test_data,
@@ -133,12 +140,13 @@ train_roc <- roc(train_data$Outcome,train_pred, levels=c("No","Yes"), direction 
 auc(train_roc)# AUC
 ci(train_roc) #AUC95%CI
 
+png(filename="Train_ROC.png", ,width=3*600,height=3*600, res=72*3)
 plot(train_roc, col="black",#颜色
      legacy.axes=T,#y轴格式更改
      print.auc=TRUE,#显示AUC面积
      print.thres=TRUE,#添加截点和95%CI
-     print.thres.cex=0.5,
-     print.auc.x=0.5, print.auc.y=0.5,print.auc.cex=0.5,
+     print.thres.cex=1,
+     print.auc.x=0.5, print.auc.y=0.5,print.auc.cex=1,
      grid=c(0.1,0.1),grid.col=c("gray","gray"),
      auc.polygon=TRUE, 
      max.auc.polygon=TRUE,
@@ -146,6 +154,7 @@ plot(train_roc, col="black",#颜色
      type="l",lty=1,xlab = "1-Specificity",
      ylab="Sensitivities",lwd=2, xgap.axis = 0.1, ygap.axis =0.1,
      xlim=c(1,0), ylim=c(0,1))
+dev.off()
 
 #测试集ROC
 test_roc <- roc(test_data$Outcome,test_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)
@@ -163,10 +172,12 @@ plot(test_roc, col="black",#颜色
      grid=c(0.2,0.2),grid.col=c("blue","yellow"))
 
 #训练集校准曲线
+png(filename="Train_Cal.png", ,width=3*600,height=3*600, res=72*3)
 train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=200)
 plot(train_cal, xlim=c(0,1), ylim=c(0,1),
      xlab="Predicted Probability", ylab="Observed Probability",
      subtitles = FALSE)# 需要图添加标注
+dev.off()
 
 #测试集校准曲线
 test_fit <- lrm(input_formula, 
@@ -180,6 +191,7 @@ plot(test_cal)
 #dev.off()
 
 #训练集DCA graph
+png(filename="Train_DCA.png", ,width=3*600,height=3*600, res=72*3)
 train_data$pred <- train_pred
 train_data$Outcome <- as.numeric(train_data$Outcome)-1
 train_dc <- decision_curve(Outcome~pred,
@@ -187,11 +199,14 @@ train_dc <- decision_curve(Outcome~pred,
 plot_decision_curve(train_dc,
                     curve.names = "model",
                     confidence.intervals = F)#显示调整
+dev.off()
 
 #绘制训练集临床影响曲线
+png(filename="Train_Clinical.png", ,width=3*600,height=3*600, res=72*3)
 plot_clinical_impact(train_dc,
                      cost.benefit.axis = FALSE,
                      confidence.intervals = FALSE)#显示调整
+dev.off()
 
 #测试集DCA graph
 test_data$pred <- test_pred
@@ -226,8 +241,10 @@ plot_clinical_impact(test_dc,
 ###########################
 
 #模型可视化-绘制森林图
+png(filename="Tree.png", ,width=3*600,height=3*600, res=72*3)
 final_mod <- glm(input_formula ,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 modelPlot(final_mod)
+dev.off()
 
 #GLM 统计 对应 ROC graph
 pred <- fitted(final_mod)
@@ -258,13 +275,15 @@ LogMod8 <- train(form.bestglm,
                  method="glm")
 LogMod8
 
-#bootstrap 抽样1000次 ROC 校验曲线
+#bootstrap 抽样1000次 校验曲线
+png(filename="Bootstrap_CAL.png", ,width=3*600,height=3*600, res=72*3)
 cal<-calibrate(fit, method = 'boot', B=1000, data = df)
 plot(cal,
      xlim=c(0,1.0),ylim=c(0,1.0),
      xlab = "Predicted Probability",
      ylab = "Observed Probability"
 )
+dev.off()
 
 #bootstrap 抽样1000次 ROC曲线
 predMyo <- df$Myo
@@ -293,6 +312,8 @@ for (i in 1:n_bootstraps) {
   roc_boot[[i]] <- roc(boot_labels, boot_predMyo + boot_predSCr + boot_predPE + boot_predPO.LAC + boot_predTrPLT, levels=c("No","Yes"), direction = "<")
 }
 
+png(filename="Bootstrap_ROC.png", ,width=3*600,height=3*600, res=72*3)
+
 plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
 
 for (i in 1:n_bootstraps) {
@@ -309,9 +330,6 @@ legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "
 # rocthr <- ci(roc4, of="thresholds", thresholds="best")
 # plot(rocthr)
 
-roc_mean
-
-
 # 提取AUC值
 auc_values <- sapply(roc_boot, function(roc_obj) auc(roc_obj))
 #print(auc_values)
@@ -323,6 +341,29 @@ print(auc_mean)
 # 计算AUC标准差
 auc_sd <- sd(auc_values)
 print(auc_sd)
+
+text(x = 0.225,y = 0.5,
+     labels = "AUC mean",
+     cex = 1,
+     col = "green")
+text(x = 0.225,y = 0.4,
+     labels = "AUC SD",
+     cex = 1,
+     col = "red")
+
+text(x = 0.1,y = 0.5,
+     labels = round(auc_mean,5),
+     cex = 1,
+     col = "green")
+text(x = 0.1,y = 0.4,
+     labels = round(auc_sd,5),
+     cex = 1,
+     col = "red")
+dev.off()
+
+roc_mean
+
+
 
 #############################################################################
 # plot(df$Outcome)
