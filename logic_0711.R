@@ -10,7 +10,6 @@ install.packages("rrtable")
 install.packages("skimr")
 install.packages("tidyverse")
 install.packages("moonBook")
-#install.packages("myft")
 install.packages("xlsx")
 install.packages("ROCR")
 install.packages("ggplot2")
@@ -32,9 +31,7 @@ library(dtplyr)
 library(moonBook)
 library(xlsx)
 library(ROCR)
-#library(myft)
 library(rmda)
-#load excel
 library(readxl)
 library(ggplot2)
 library(ggtext)
@@ -104,26 +101,26 @@ options(datadist="d1")
 #选取部分变量进行拟合
 #fit <- lrm(Outcome~Gender + Age + BMI + cTnT + BNP + CKMB + Myo + Alb + TP + Cr + BUN + Hb + RBC + HCT + PLT + APTT + PT + D.D + HBP + DM + CVA + AMI + CKD + PE + Kidney + Eth + Bh + Th + RBCu + Plaml + Cry + PLTu + OP,
 #           data = df, x = TRUE, y = TRUE)
-#fit <- lrm(input_formula, 
-#           data = df, x = TRUE, y = TRUE)
-fit <- lrm(input_formula, 
+fit <- lrm(input_formula,
+          data = df, x = TRUE, y = TRUE)
+train_fit <- lrm(input_formula,
            data = train_data, x = TRUE, y = TRUE)
-fit
+train_fit
 
 #绘制训练集列线图
-nom <- nomogram(fit,
+nom <- nomogram(train_fit,
                 fun = plogis,
                 lp=F,
                 funlabel="Risk of Outcome")
 plot(nom,lp=FALSE)
 
 #训练集预测
-train_pred <- predict(fit,
+train_pred <- predict(train_fit,
                       newdata=train_data,
                       type = "fitted")
 
-#测试集预测                    
-test_pred <- predict(fit,
+#测试集预测
+test_pred <- predict(test_fit,
                      newdata=test_data,
                      type="fitted")
 
@@ -135,13 +132,6 @@ train_roc <- roc(train_data$Outcome,train_pred, levels=c("No","Yes"), direction 
 # 计算AUC及95%CI
 auc(train_roc)# AUC
 ci(train_roc) #AUC95%CI
-
-plot(train_roc, col="black",#颜色print.auc=TRUE, 
-     print.auc.x=0.2, print.auc.y=0.6,print.auc.cex=0.7,
-     auc.polygon=T,
-     auc.polygon.col="white", 
-     grid= FALSE, 
-     legacy.axes=T)
 
 plot(train_roc, col="black",#颜色
      legacy.axes=T,#y轴格式更改
@@ -173,7 +163,7 @@ plot(test_roc, col="black",#颜色
      grid=c(0.2,0.2),grid.col=c("blue","yellow"))
 
 #训练集校准曲线
-train_cal <- calibrate(fit, data=train_data, method ="boot", B=200)
+train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=200)
 plot(train_cal, xlim=c(0,1), ylim=c(0,1),
      xlab="Predicted Probability", ylab="Observed Probability",
      subtitles = FALSE)# 需要图添加标注
@@ -189,7 +179,6 @@ plot(test_cal)
 #print(ggplot(test_cal))
 #dev.off()
 
-
 #训练集DCA graph
 train_data$pred <- train_pred
 train_data$Outcome <- as.numeric(train_data$Outcome)-1
@@ -198,6 +187,7 @@ train_dc <- decision_curve(Outcome~pred,
 plot_decision_curve(train_dc,
                     curve.names = "model",
                     confidence.intervals = F)#显示调整
+
 #绘制训练集临床影响曲线
 plot_clinical_impact(train_dc,
                      cost.benefit.axis = FALSE,
@@ -217,64 +207,36 @@ plot_clinical_impact(test_dc,
                      confidence.intervals = FALSE)
 
 
+######################
+#如下全因素逻辑拟合会报错，暂时SPASS 软件统计替代。
 #逻辑模型拟合
-mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
-summary(mod)
-p<-predict(mod,type='response')
-qplot(sort(p),col='predict')
-#logistic.display(mod,crude.p.value = T,crude = T,decimal = T)
-confint(mod)
-#多元逻辑回归
-autoReg(mod)
-#单变量和多元逻辑回归回归（单变量向后选择）
-autoReg(mod,uni=T)
-autoReg(mod,uni=F,final=T)
-查看模型的统计量
-gaze(mod)
+# mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
+# summary(mod)
+# p<-predict(mod,type='response')
+# qplot(sort(p),col='predict')
+# #logistic.display(mod,crude.p.value = T,crude = T,decimal = T)
+# confint(mod)
+# #多元逻辑回归
+# autoReg(mod)
+# #单变量和多元逻辑回归回归（单变量向后选择）
+# autoReg(mod,uni=T)
+# autoReg(mod,uni=F,final=T)
+# 查看模型的统计量
+# gaze(mod)
+###########################
 
 #模型可视化-绘制森林图
 final_mod <- glm(input_formula ,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 modelPlot(final_mod)
-#forestploter 森林图
-#测试数据读入：
-#df <- read.csv(system.file("extdata", input_excel, package = "forestploter"))
-#View(df) #分类型数据，注意NA行是有分组项的主标签
 
-#ROC graph
+#GLM 统计 对应 ROC graph
 pred <- fitted(final_mod)
 perdic <- prediction(pred,df$Outcome)
 perf <- performance(perdic,"tpr","fpr")
 plot(perf,lwd=2)
 abline(0,1,lty=2)
 
-#df$pred <- train_pred
-#df$Outcome <- as.numeric(df$Outcome)-1
-#train_dc <- decision_curve(Outcome~pred,
-#                           data = df,family = binomial(link ='logit'),
-#                           thresholds= seq(0,1, by = 0.01),
-#                           confidence.intervals =0.95,study.design = 'case-control')
-#df$Outcome <- as.numeric(df$Outcome)-1
-#dc1 <- decision_curve(Outcome~Myo + Cr + Hb + PE,
-#                     data=df,family = "binomial")
-
-#baseline.model <- f(Outcome~Myo + Cr + Hb + PE,
-#                                 family = binomial(link = "logit"),
-#                                 data = df,
-#                                 thresholds = seq(0, 1, by = .01),
-#                                 bootstraps = 500,
-#                                 policy=c("opt-in","opt-out"),
-#                                fitted.risk = FALSE,
-#                                 study.design = c("cohort","case-control"))
-#plot_decision_curve(baseline.model,  
-#                    curve.names = "baseline model",
-#                    confidence.intervals=F 
-#                    )
-
-#plot_decision_curve(train_dc,
-#                    curve.names = "Model",
-#                    confidence.intervals = FALSE)
-
-#Bootstrap
+#Bootstrap 抽样统计
 form.bestglm<-as.formula(input_formula)
 train.control_7 <-trainControl(method = "boot",
                                number=1000)
@@ -326,12 +288,9 @@ for (i in 1:n_bootstraps) {
   boot_predPO.LAC <- predPO.LAC[boot_indices]
   boot_predTrPLT <- predTrPLT[boot_indices]
 
-  
   # 计算bootstrap样本的ROC曲线
   # roc_boot[[i]] <- roc(boot_labels, boot_predhs.TnT + boot_predSCr + boot_predMyo + boot_predPE + boot_predOp.LAC + boot_predPLT.u., levels=c("No","Yes"), direction = "<")
   roc_boot[[i]] <- roc(boot_labels, boot_predMyo + boot_predSCr + boot_predPE + boot_predPO.LAC + boot_predTrPLT, levels=c("No","Yes"), direction = "<")
-
-#  auc(roc_boot[[i]])
 }
 
 plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
@@ -355,7 +314,7 @@ roc_mean
 
 # 提取AUC值
 auc_values <- sapply(roc_boot, function(roc_obj) auc(roc_obj))
-print(auc_values)
+#print(auc_values)
 
 # 计算AUC均值
 auc_mean <- mean(auc_values)
@@ -366,28 +325,28 @@ auc_sd <- sd(auc_values)
 print(auc_sd)
 
 #############################################################################
-plot(df$Outcome)
-sens.ci <- ci.se(df$Outcome, specificities=seq(0, 1, .1))
-#ci.se,在特定情况下计算灵敏度的置信区间
-plot(sens.ci, type="bars")
-
-
-pdf("bootstrap_ROC.pdf",width =10,height = 5)
-par(mfrow=c(1,2))
-plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
-for (i in 1:n_bootstraps) {
-  lines(roc_boot[[i]], col = "grey", alpha = 0.2)
-}
-
-# 汇总所有bootstrap样本的ROC曲线
-roc_mean <- roc(boot_labels, boot_pred,ci=TRUE)  # 使用原始数据计算平均ROC曲线
-lines(roc_mean, col = "blue", lwd = 2)  # 绘制平均ROC曲线
-legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
-
-#ci.se计算特定特异度下灵敏度的置信区间
-plot(df$Outcome,main="ci.se function")
-sens.ci <- ci.se(df$Outcome, specificities=seq(0, 1, .1),boot.n=1000)
-#ci.se,在特定情况下计算灵敏度的置信区间
-plot(sens.ci, type="bars")
-
-dev.off()
+# plot(df$Outcome)
+# sens.ci <- ci.se(df$Outcome, specificities=seq(0, 1, .1))
+# #ci.se,在特定情况下计算灵敏度的置信区间
+# plot(sens.ci, type="bars")
+# 
+# 
+# pdf("bootstrap_ROC.pdf",width =10,height = 5)
+# par(mfrow=c(1,2))
+# plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
+# for (i in 1:n_bootstraps) {
+#   lines(roc_boot[[i]], col = "grey", alpha = 0.2)
+# }
+# 
+# # 汇总所有bootstrap样本的ROC曲线
+# roc_mean <- roc(boot_labels, boot_pred,ci=TRUE)  # 使用原始数据计算平均ROC曲线
+# lines(roc_mean, col = "blue", lwd = 2)  # 绘制平均ROC曲线
+# legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
+# 
+# #ci.se计算特定特异度下灵敏度的置信区间
+# plot(df$Outcome,main="ci.se function")
+# sens.ci <- ci.se(df$Outcome, specificities=seq(0, 1, .1),boot.n=1000)
+# #ci.se,在特定情况下计算灵敏度的置信区间
+# plot(sens.ci, type="bars")
+# 
+# dev.off()
