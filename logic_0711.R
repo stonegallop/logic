@@ -326,6 +326,14 @@ plot(cal,
      xlab = "Predicted Probability",
      ylab = "Observed Probability"
 )
+text(x = 0.3,y = 0.85,
+     labels = "Hosmer and Lemeshow:",
+     cex = 1,
+     col = "black")
+text(x = 0.3,y = 0.75,
+     labels = "p-value = 0.8084",
+     cex = 1,
+     col = "black")
 dev.off()
 
 #bootstrap 抽样1000次 ROC曲线
