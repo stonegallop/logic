@@ -256,14 +256,20 @@ sink()
 #单变量和多元逻辑回归回归（单变量向后选择）
 sink("GLM AutoReg Uni.txt", split=TRUE)  # 控制台同样输出
 autoReg(mod,uni=T)
-dev.off()
-sink("GLM Confint Uni Final.txt", split=TRUE)  # 控制台同样输出
-autoReg(mod,uni=F,final=T)
-dev.off()
+sink()
 
-查看模型的统计量
-sink("GLM Gaze Uni.txt", split=TRUE)  # 控制台同样输出
+sink("GLM AutoReg Uni Final.txt", split=TRUE)  # 控制台同样输出
+autoReg(mod,uni=F,final=T)
+sink()
+
+#查看模型的统计量
+sink("GLM Gaze.txt", split=TRUE)  # 控制台同样输出
 gaze(mod)
+sink()
+
+#Hosmer-Lemeshow 拟合优度检验
+sink("Hosmer-Lemeshow .txt", split=TRUE)  # 控制台同样输出
+hoslem.test(mod$y, fitted(mod), g=10)
 sink()
 
 ###########################
