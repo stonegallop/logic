@@ -173,7 +173,7 @@ plot(test_roc, col="black",#颜色
 
 #训练集校准曲线
 png(filename="Train_Cal.png", ,width=3*600,height=3*600, res=72*3)
-train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=200)
+train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=1000)
 plot(train_cal, xlim=c(0,1), ylim=c(0,1),
      xlab="Predicted Probability", ylab="Observed Probability",
      subtitles = FALSE)# 需要图添加标注
@@ -184,7 +184,7 @@ test_fit <- lrm(input_formula,
            data = test_data, x = TRUE, y = TRUE)
 test_cal <- calibrate(test_fit,
                       data=test_data,
-                      B=100)
+                      B=1000)
 plot(test_cal)
 #png(filename = paste0("test_cal", ".jpg"),width = 2400,height = 1800,res = 300)
 #print(ggplot(test_cal))
