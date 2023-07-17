@@ -45,6 +45,7 @@ library(readxl)
 library(ggplot2)
 library(ggtext)
 
+#unlink("F:/project/rstudio/logic/0711-0", recursive = TRUE)  
 input_excel <- "xuetou0713.xlsx"
 input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 
