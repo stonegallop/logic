@@ -48,6 +48,9 @@ library(ggtext)
 input_excel <- "xuetou0713.xlsx"
 input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 
+output_dir <- "F:/project/rstudio/logic/07170/"
+dir.create(output_dir)
+
 dataset <- read_excel(input_excel)
 View(dataset)
 
@@ -90,7 +93,7 @@ df$Age <- factor(df$Age,,levels = c(0,1), labels = c("<60",">=60"))
 #basic graph
 ft <- gaze(Outcome~.,data=df) %>%myft()
 print(ft)
-table2docx(ft,target="Basic_Graph")
+table2docx(ft,target=paste(output_dir,"Basic_Graph"))
 
 #train and test data
 ind <- createDataPartition(df$Outcome, p=1, list = FALSE)
@@ -114,12 +117,12 @@ fit <- lrm(input_formula,
           data = df, x = TRUE, y = TRUE)
 train_fit <- lrm(input_formula,
            data = train_data, x = TRUE, y = TRUE)
-sink("Logistic Regression Model.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"Logistic Regression Model.txt"), split=TRUE)  # 控制台同样输出
 print(train_fit)
 sink()
 
 #绘制训练集列线图
-png(filename="Line_Graph.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Line_Graph.png"), ,width=3*600,height=3*600, res=72*3)
 nom <- nomogram(train_fit,
                 fun = plogis,
                 lp=F,
@@ -145,7 +148,7 @@ train_roc <- roc(train_data$Outcome,train_pred, levels=c("No","Yes"), direction 
 auc(train_roc)# AUC
 ci(train_roc) #AUC95%CI
 
-png(filename="Train_ROC.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_ROC.png"), ,width=3*600,height=3*600, res=72*3)
 plot(train_roc, col="black",#颜色
      legacy.axes=T,#y轴格式更改
      print.auc=TRUE,#显示AUC面积
@@ -177,7 +180,7 @@ plot(test_roc, col="black",#颜色
      grid=c(0.2,0.2),grid.col=c("blue","yellow"))
 
 #训练集校准曲线
-png(filename="Train_Cal.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_Cal.png"), ,width=3*600,height=3*600, res=72*3)
 train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=100)
 plot(train_cal, xlim=c(0,1), ylim=c(0,1),
      xlab="Predicted Probability", ylab="Observed Probability")
@@ -197,7 +200,7 @@ plot(test_cal)
 #dev.off()
 
 #训练集DCA graph
-png(filename="Train_DCA.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_DCA.png"), ,width=3*600,height=3*600, res=72*3)
 train_data$pred <- train_pred
 train_data$Outcome <- as.numeric(train_data$Outcome)-1
 train_dc <- decision_curve(Outcome~pred,
@@ -208,7 +211,7 @@ plot_decision_curve(train_dc,
 dev.off()
 
 #绘制训练集临床影响曲线
-png(filename="Train_Clinical.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_Clinical.png"), ,width=3*600,height=3*600, res=72*3)
 plot_clinical_impact(train_dc,
                      cost.benefit.axis = FALSE,
                      confidence.intervals = FALSE)#显示调整
@@ -229,7 +232,7 @@ plot_clinical_impact(test_dc,
 
 
 ######################
-#如下全因素逻辑拟合会报错，暂时SPASS 软件统计替代。
+#如下全因素逻辑拟合如果报错，可以选择SPASS 软件统计替代。
 #逻辑模型拟合
 # mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 mod <- glm(Outcome~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
@@ -240,47 +243,47 @@ mod <- glm(Outcome~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
 p<-predict(mod,type='response')
 qplot(sort(p),col='predict')
 
-sink("GLM Summary.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"GLM Summary.txt"), split=TRUE)  # 控制台同样输出
 summary(mod)
 sink()
 
-sink("GLM Confint.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"GLM Confint.txt"), split=TRUE)  # 控制台同样输出
 confint(mod)
 sink()
 
 #多元逻辑回归
-sink("GLM AutoReg.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"GLM AutoReg.txt"), split=TRUE)  # 控制台同样输出
 autoReg(mod)
 sink()
 
 #单变量和多元逻辑回归回归（单变量向后选择）
-sink("GLM AutoReg Uni.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"GLM AutoReg Uni.txt"), split=TRUE)  # 控制台同样输出
 autoReg(mod,uni=T)
 sink()
 
-sink("GLM AutoReg Uni Final.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"GLM AutoReg Uni Final.txt"), split=TRUE)  # 控制台同样输出
 autoReg(mod,uni=F,final=T)
 sink()
 
 #查看模型的统计量
-sink("GLM Gaze.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"GLM Gaze.txt"), split=TRUE)  # 控制台同样输出
 gaze(mod)
 sink()
 
 #Hosmer-Lemeshow 拟合优度检验
-sink("Hosmer-Lemeshow .txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"Hosmer-Lemeshow.txt"), split=TRUE)  # 控制台同样输出
 hoslem.test(mod$y, fitted(mod), g=10)
 sink()
 
 ###########################
 
 #模型可视化-绘制森林图
-png(filename="Tree.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Tree.png"), ,width=3*600,height=3*600, res=72*3)
 final_mod <- glm(input_formula ,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 modelPlot(final_mod)
 dev.off()
 
-#GLM 统计 对应 ROC graph
+#GLM 统计 对应 ROC graph optional
 pred <- fitted(final_mod)
 perdic <- prediction(pred,df$Outcome)
 perf <- performance(perdic,"tpr","fpr")
@@ -297,7 +300,7 @@ LogMod7 <- train(form.bestglm,
                  data=df, 
                  trControl=train.control_7, 
                  method="glm")
-sink("Bootstrap GLM Accurarcy Kappa.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"Bootstrap GLM Accurarcy Kappa.txt"), split=TRUE)  # 控制台同样输出
 LogMod7
 sink()
 
@@ -310,12 +313,12 @@ LogMod8 <- train(form.bestglm,
                  data=df, 
                  trControl=train.control_8, 
                  method="glm")
-sink("Bootstrap GLM ROC Sens Spec.txt", split=TRUE)  # 控制台同样输出
+sink(paste(output_dir,"Bootstrap GLM ROC Sens Spec.txt"), split=TRUE)  # 控制台同样输出
 LogMod8
 sink()
 
 #bootstrap 抽样1000次 校验曲线
-png(filename="Bootstrap_CAL.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Bootstrap_CAL.png"), ,width=3*600,height=3*600, res=72*3)
 cal<-calibrate(fit, method = 'boot', B=1000, data = df)
 plot(cal,
      xlim=c(0,1.0),ylim=c(0,1.0),
@@ -351,7 +354,7 @@ for (i in 1:n_bootstraps) {
   roc_boot[[i]] <- roc(boot_labels, boot_predMyo + boot_predSCr + boot_predPE + boot_predPO.LAC + boot_predTrPLT, levels=c("No","Yes"), direction = "<")
 }
 
-png(filename="Bootstrap_ROC.png", ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=3*600,height=3*600, res=72*3)
 
 plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
 
