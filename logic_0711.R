@@ -18,7 +18,10 @@ install.packages("ggtext")
 install.packages("officer")
 install.packages("xtable")
 install.packages("flextable")
+install.packages("ResourceSelection")
 
+library(foreign)
+library(ResourceSelection)
 library(xtable)
 library(flextable)
 library(officer)
@@ -229,18 +232,40 @@ plot_clinical_impact(test_dc,
 #如下全因素逻辑拟合会报错，暂时SPASS 软件统计替代。
 #逻辑模型拟合
 # mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
-# summary(mod)
-# p<-predict(mod,type='response')
-# qplot(sort(p),col='predict')
-# #logistic.display(mod,crude.p.value = T,crude = T,decimal = T)
-# confint(mod)
-# #多元逻辑回归
-# autoReg(mod)
-# #单变量和多元逻辑回归回归（单变量向后选择）
-# autoReg(mod,uni=T)
-# autoReg(mod,uni=F,final=T)
-# 查看模型的统计量
-# gaze(mod)
+mod <- glm(Outcome~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
+             Myo+ALB+TB+SCr+BUN+Hb+RBC+PLT+APTT
+           +PT+FB+D.D+HBP+DM+CVA+CVD+CKD+PE
+           +Kidney+FFP.ml.+AHF.u.+TrPLT,data = df,control=list(maxit=100),family = binomial(link = "logit"))
+
+p<-predict(mod,type='response')
+qplot(sort(p),col='predict')
+
+sink("GLM Summary.txt", split=TRUE)  # 控制台同样输出
+summary(mod)
+sink()
+
+sink("GLM Confint.txt", split=TRUE)  # 控制台同样输出
+confint(mod)
+sink()
+
+#多元逻辑回归
+sink("GLM AutoReg.txt", split=TRUE)  # 控制台同样输出
+autoReg(mod)
+sink()
+
+#单变量和多元逻辑回归回归（单变量向后选择）
+sink("GLM AutoReg Uni.txt", split=TRUE)  # 控制台同样输出
+autoReg(mod,uni=T)
+dev.off()
+sink("GLM Confint Uni Final.txt", split=TRUE)  # 控制台同样输出
+autoReg(mod,uni=F,final=T)
+dev.off()
+
+查看模型的统计量
+sink("GLM Gaze Uni.txt", split=TRUE)  # 控制台同样输出
+gaze(mod)
+sink()
+
 ###########################
 
 #模型可视化-绘制森林图
@@ -351,7 +376,7 @@ auc_sd <- sd(auc_values)
 print(auc_sd)
 
 text(x = 0.225,y = 0.5,
-     labels = "AUC mean",
+     labels = "AUC Mean",
      cex = 1,
      col = "green")
 text(x = 0.225,y = 0.4,
