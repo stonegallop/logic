@@ -16,7 +16,11 @@ install.packages("ggplot2")
 install.packages('forestploter')
 install.packages("ggtext")
 install.packages("officer")
+install.packages("xtable")
+install.packages("flextable")
 
+library(xtable)
+library(flextable)
 library(officer)
 library(grid)
 library(forestploter)
@@ -107,11 +111,9 @@ fit <- lrm(input_formula,
           data = df, x = TRUE, y = TRUE)
 train_fit <- lrm(input_formula,
            data = train_data, x = TRUE, y = TRUE)
+sink("Logistic Regression Model.txt", split=TRUE)  # 控制台同样输出
 print(train_fit)
-#doc_fit = read_docx()
-# doc_fit = body_add_flextable(doc_fit, train_fit)
-# print(doc_fit,"Logistic_Regression_Model.docx")
-# table2docx(train_fit,target="Logistic_Regression_Model")
+sink()
 
 #绘制训练集列线图
 png(filename="Line_Graph.png", ,width=3*600,height=3*600, res=72*3)
@@ -173,18 +175,19 @@ plot(test_roc, col="black",#颜色
 
 #训练集校准曲线
 png(filename="Train_Cal.png", ,width=3*600,height=3*600, res=72*3)
-train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=1000)
+train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=100)
 plot(train_cal, xlim=c(0,1), ylim=c(0,1),
-     xlab="Predicted Probability", ylab="Observed Probability",
-     subtitles = FALSE)# 需要图添加标注
+     xlab="Predicted Probability", ylab="Observed Probability")
+# plot(train_cal, xlim=c(0,1), ylim=c(0,1),
+#      xlab="Predicted Probability", ylab="Observed Probability",
+#      subtitles = FALSE)#  subtitles = FALSE 不显示Mean absolute error=0.025等信息
+
 dev.off()
 
 #测试集校准曲线
 test_fit <- lrm(input_formula, 
            data = test_data, x = TRUE, y = TRUE)
-test_cal <- calibrate(test_fit,
-                      data=test_data,
-                      B=1000)
+test_cal <- calibrate(test_fit, data=test_data,, method ="boot", B=100)
 plot(test_cal)
 #png(filename = paste0("test_cal", ".jpg"),width = 2400,height = 1800,res = 300)
 #print(ggplot(test_cal))
@@ -254,6 +257,7 @@ plot(perf,lwd=2)
 abline(0,1,lty=2)
 
 #Bootstrap 抽样统计
+#Bootstrap简单交叉验证
 form.bestglm<-as.formula(input_formula)
 train.control_7 <-trainControl(method = "boot",
                                number=1000)
@@ -262,7 +266,9 @@ LogMod7 <- train(form.bestglm,
                  data=df, 
                  trControl=train.control_7, 
                  method="glm")
+sink("Bootstrap GLM Accurarcy Kappa.txt", split=TRUE)  # 控制台同样输出
 LogMod7
+sink()
 
 train.control_8 <-trainControl(method = "boot",
                                number=1000,
@@ -273,7 +279,9 @@ LogMod8 <- train(form.bestglm,
                  data=df, 
                  trControl=train.control_8, 
                  method="glm")
+sink("Bootstrap GLM ROC Sens Spec.txt", split=TRUE)  # 控制台同样输出
 LogMod8
+sink()
 
 #bootstrap 抽样1000次 校验曲线
 png(filename="Bootstrap_CAL.png", ,width=3*600,height=3*600, res=72*3)
