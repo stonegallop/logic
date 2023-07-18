@@ -15,13 +15,19 @@ install.packages("ROCR")
 install.packages("ggplot2")
 install.packages('forestploter')
 install.packages("ggtext")
-install.packages("officer")
-install.packages("xtable")
-install.packages("flextable")
-install.packages("ResourceSelection")
+# install.packages("officer")
+# install.packages("xtable")
+# install.packages("flextable")
+# install.packages("ResourceSelection")
+# install.packages("devtools")
+# if (!require(ggDCA)) {
+#   devtools::install_github("yikeshu0611/ggDCA")
+# }
+#
+# library(ggDCA)
 
-library(foreign)
-library(ResourceSelection)
+# library(foreign)
+# library(ResourceSelection)
 library(xtable)
 library(flextable)
 library(officer)
@@ -80,7 +86,6 @@ for (i in 1:354) {
 #print(df$Ag)
 df$Age <- factor(df$Age,,levels = c(0,1), labels = c("<60",">=60"))
 
-
 # df$Gender <- factor(df$Gender,levels = c(1,2), labels = c("Male","Female"))
 # df$OP <- factor(df$OP,levels = c(0,1,2,3), labels = c("No","Bentall","Wheat", "David"))
 # df$HBP <- factor(df$HBP,levels = c(0,1), labels = c("No","Yes"))
@@ -105,11 +110,14 @@ test_data <- df[-ind,] # 测试集
 
 # pack data
 #d <- datadist(df)
-d <- datadist(train_data)
-options(datadist="d")
+df_dist <- datadist(df)
+options(datadist="df_dist")
 
-d1 <- datadist(test_data)
-options(datadist="d1")
+train_data_dist <- datadist(train_data)
+options(datadist="train_data_dist")
+
+test_data_dist <- datadist(test_data)
+options(datadist="test_data_dist")
 
 #选取部分变量进行拟合
 #fit <- lrm(Outcome~Gender + Age + BMI + cTnT + BNP + CKMB + Myo + Alb + TP + Cr + BUN + Hb + RBC + HCT + PLT + APTT + PT + D.D + HBP + DM + CVA + AMI + CKD + PE + Kidney + Eth + Bh + Th + RBCu + Plaml + Cry + PLTu + OP,
@@ -188,7 +196,6 @@ plot(train_cal, xlim=c(0,1), ylim=c(0,1),
 # plot(train_cal, xlim=c(0,1), ylim=c(0,1),
 #      xlab="Predicted Probability", ylab="Observed Probability",
 #      subtitles = FALSE)#  subtitles = FALSE 不显示Mean absolute error=0.025等信息
-
 dev.off()
 
 #测试集校准曲线
@@ -206,9 +213,14 @@ train_data$pred <- train_pred
 train_data$Outcome <- as.numeric(train_data$Outcome)-1
 train_dc <- decision_curve(Outcome~pred,
                       data=train_data,family = "binomial")
+# head(train_dc)
 plot_decision_curve(train_dc,
                     curve.names = "model",
                     confidence.intervals = F)#显示调整
+text(x = 0.0395,y = 0.676,
+     labels = ".",
+     cex = 1,
+     col = "black")
 dev.off()
 
 #绘制训练集临床影响曲线
@@ -337,6 +349,8 @@ text(x = 0.3,y = 0.75,
 dev.off()
 
 #bootstrap 抽样1000次 ROC曲线
+png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=3*600,height=3*600, res=72*3)
+
 predMyo <- df$Myo
 predSCr <- df$SCr
 predPE <- as.numeric(df$PE)-1
@@ -362,8 +376,6 @@ for (i in 1:n_bootstraps) {
   # roc_boot[[i]] <- roc(boot_labels, boot_predhs.TnT + boot_predSCr + boot_predMyo + boot_predPE + boot_predOp.LAC + boot_predPLT.u., levels=c("No","Yes"), direction = "<")
   roc_boot[[i]] <- roc(boot_labels, boot_predMyo + boot_predSCr + boot_predPE + boot_predPO.LAC + boot_predTrPLT, levels=c("No","Yes"), direction = "<")
 }
-
-png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=3*600,height=3*600, res=72*3)
 
 plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
 
@@ -410,6 +422,7 @@ text(x = 0.1,y = 0.4,
      labels = round(auc_sd,5),
      cex = 1,
      col = "red")
+
 dev.off()
 
 roc_mean
