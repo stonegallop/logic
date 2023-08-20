@@ -55,7 +55,7 @@ library(ggtext)
 input_excel <- "xuetou0713.xlsx"
 input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 
-output_dir <- "F:/project/rstudio/logic/07170/"
+output_dir <- "F:/project/rstudio/logic/08160/"
 dir.create(output_dir)
 
 dataset <- read_excel(input_excel)
@@ -243,6 +243,29 @@ plot_clinical_impact(test_dc,
                      cost.benefit.axis = FALSE,
                      confidence.intervals = FALSE)
 
+#wald B OR P convert form R to SPASS
+formatFit <- function(fit){
+  #取P值
+  p<-summary(fit)$coefficients[,4]
+  #wald值
+  wald<-summary(fit)$coefficients[,3]^2
+  #B值
+  valueB<-coef(fit)
+  #OR值
+  valueOR<-exp(coef(fit))
+  #OR值得95%CI
+  confitOR<-exp(confint(fit))
+#  sink(paste(output_dir,"Tree SPASS B Wald OR P Values.txt"), split=TRUE)  # 控制台同样输出
+  data.frame(
+    B=round(valueB,3),
+    Wald=round(wald,3),
+    OR_with_CI=paste(round(valueOR,3),"(",
+                     round(confitOR[,1],3),"~",round(confitOR[,2],3),")",sep=""),
+    P=format.pval(p,digits = 3,eps=0.001)
+  )
+# sink()
+}
+
 
 ######################
 #如下全因素逻辑拟合如果报错，可以选择SPASS 软件统计替代。
@@ -295,6 +318,41 @@ png(filename=paste(output_dir,"Tree.png"), ,width=3*600,height=3*600, res=72*3)
 final_mod <- glm(input_formula ,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 modelPlot(final_mod)
 dev.off()
+
+sink(paste(output_dir,"Tree GLM Summary.txt"), split=TRUE)  # 控制台同样输出
+summary(final_mod)
+sink()
+
+sink(paste(output_dir,"Tree GLM Confint.txt"), split=TRUE)  # 控制台同样输出
+confint(final_mod)
+sink()
+
+#多元逻辑回归
+sink(paste(output_dir,"Tree GLM AutoReg.txt"), split=TRUE)  # 控制台同样输出
+autoReg(final_mod)
+sink()
+
+#单变量和多元逻辑回归回归（单变量向后选择）
+sink(paste(output_dir,"Tree GLM AutoReg Uni.txt"), split=TRUE)  # 控制台同样输出
+autoReg(final_mod,uni=T)
+sink()
+
+sink(paste(output_dir,"Tree GLM AutoReg Uni Final.txt"), split=TRUE)  # 控制台同样输出
+autoReg(final_mod,uni=F,final=T)
+sink()
+
+#查看模型的统计量
+sink(paste(output_dir,"Tree GLM Gaze.txt"), split=TRUE)  # 控制台同样输出
+gaze(final_mod)
+sink()
+
+#Hosmer-Lemeshow 拟合优度检验
+sink(paste(output_dir,"Tree Hosmer-Lemeshow.txt"), split=TRUE)  # 控制台同样输出
+hoslem.test(final_mod$y, fitted(final_mod), g=10)
+sink()
+
+#convert to SPASS B Wald OR P Value.
+formatFit(final_mod)
 
 #GLM 统计 对应 ROC graph optional
 pred <- fitted(final_mod)
