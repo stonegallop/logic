@@ -522,13 +522,17 @@ x<-as.matrix(data.frame(model_mat))#重新组合成数据
 y<-df$Outcome
 f1 = glmnet(x, y , family="binomial", nlambda=100, alpha=1) #这里alpha=1为LASSO回归，如果等于0就是岭回归
 f1
+png(filename=paste(output_dir,"Lasso Lambda.png"), ,width=3*600,height=3*600, res=72*3)
 plot(f1, xvar="lambda", label=TRUE)
+dev.off()
 
 # 交叉验证
 set.seed(123)
 cvfit = cv.glmnet(x, y,type.measure = "class", nfolds = 20,family="binomial")
 #这时对模型绘图展示的是不同的结果
+png(filename=paste(output_dir,"Lasso Log(λ).png"), ,width=3*600,height=3*600, res=72*3)
 plot(cvfit)
+dev.off()
 
 print(cvfit$lambda.min)
 print(cvfit$lambda.1se)
