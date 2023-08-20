@@ -16,6 +16,7 @@ install.packages("ggplot2")
 install.packages('forestploter')
 install.packages("ggtext")
 install.packages("ResourceSelection")
+install.packages("")
 # install.packages("officer")
 # install.packages("xtable")
 # install.packages("flextable")
@@ -50,6 +51,7 @@ library(rmda)
 library(readxl)
 library(ggplot2)
 library(ggtext)
+library(glmnet)
 
 #unlink("F:/project/rstudio/logic/0711-0", recursive = TRUE)  
 input_excel <- "xuetou0713.xlsx"
@@ -513,3 +515,34 @@ roc_mean
 # plot(sens.ci, type="bars")
 # 
 # dev.off()
+
+#lasso graphic
+model_mat <-model.matrix(~+Myo+SCr+PE+PO.LAC+TrPLT,df)###把分类变量变成哑变量矩阵形式
+x<-as.matrix(data.frame(model_mat))#重新组合成数据
+y<-df$Outcome
+f1 = glmnet(x, y , family="binomial", nlambda=100, alpha=1) #这里alpha=1为LASSO回归，如果等于0就是岭回归
+f1
+plot(f1, xvar="lambda", label=TRUE)
+
+# 交叉验证
+set.seed(123)
+cvfit = cv.glmnet(x, y,type.measure = "class", nfolds = 20,family="binomial")
+#这时对模型绘图展示的是不同的结果
+plot(cvfit)
+
+print(cvfit$lambda.min)
+print(cvfit$lambda.1se)
+
+Coefficients <- coef(cvfit, s = cvfit$lambda.min)
+Active.Index <- which(Coefficients != 0)
+Active.Coefficients <- Coefficients[Active.Index]
+Active.Index
+Active.Coefficients
+
+l.coef2<-coef(cvfit$glmnet.fit,s=cvfit$lambda.min,exact = F)
+l.coef1<-coef(cvfit$glmnet.fit,s=cvfit$lambda.1se,exact = F)
+l.coef1
+l.coef2
+
+#指定lambda在0.05和0.01时预测新样本的类别，type = "class"指定输出值为类别
+predict(f1, newx = x[1:10,], type = "class", s = c(0.05, 0.01))
