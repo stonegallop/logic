@@ -1,0 +1,24 @@
+
+Call:
+glm(formula = input_formula, family = binomial(link = "logit"), 
+    data = df, control = list(maxit = 100))
+
+Coefficients:
+                 Estimate Std. Error z value Pr(>|z|)    
+(Intercept)    -5.0669030  0.5262569  -9.628  < 2e-16 ***
+肌红蛋白        0.0010789  0.0003714   2.905 0.003670 ** 
+血肌酐          0.0136594  0.0029090   4.696 2.66e-06 ***
+术前心包积液    1.4879173  0.4320120   3.444 0.000573 ***
+手术结束时乳酸  0.1893704  0.0609469   3.107 0.001889 ** 
+血小板输注>1    2.1611831  0.8728004   2.476 0.013281 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 249.73  on 353  degrees of freedom
+Residual deviance: 171.32  on 348  degrees of freedom
+AIC: 183.32
+
+Number of Fisher Scoring iterations: 6
+

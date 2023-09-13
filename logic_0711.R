@@ -158,11 +158,11 @@ print(train_fit)
 sink()
 
 #绘制训练集列线图
-png(filename=paste(output_dir,"Line_Graph2.png"), ,width=3*600,height=3*600, res=72*3)
-#nom <- nomogram(train_fit,
-#                fun = plogis,
-#                lp=F,
-#                funlabel="Risk of Outcome")
+png(filename=paste(output_dir,"Line_Graph1.png"), ,width=3*600,height=3*600, res=72*3)
+nom <- nomogram(train_fit,
+                fun = plogis,
+                lp=F,
+                funlabel="Risk of Outcome")
 plot(nom,lp=FALSE)
 text(x = 0.3,y = ,
      labels = "石腾腾",
