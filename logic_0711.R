@@ -1,4 +1,5 @@
-
+if(0)
+{
 install.packages("mice")
 install.packages("autoReg")
 install.packages("rms")
@@ -19,6 +20,7 @@ install.packages("ResourceSelection")
 install.packages("")
 install.packages("extrafont")
 install.packages("sysfonts")
+}
 # install.packages("officer")
 # install.packages("xtable")
 # install.packages("flextable")
@@ -75,14 +77,16 @@ G=windowsFont("华文细黑"),
 H=windowsFont("微软雅黑"),
 J=windowsFont("华文新魏"),
 K=windowsFont("幼圆")
-) 
+)
+
+testflag <- 0
 
 #unlink("F:/project/rstudio/logic/0711-0", recursive = TRUE)  
-input_excel <- "xuetou0912.xlsx"
-#input_formula <- 结果~Myo+SCr+PE+PO.LAC+TrPLT
-input_formula <- 结果~肌红蛋白+血肌酐+术前心包积液+手术结束时乳酸+血小板输注
+input_excel <- "xuetou0713.xlsx"
+#input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
+input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 
-output_dir <- "F:/project/rstudio/logic/0912/"
+output_dir <- "D:/Project/Rproject/logic/09230/"
 dir.create(output_dir)
 
 dataset <- read_excel(input_excel)
@@ -102,8 +106,8 @@ df<-read.xlsx(input_excel,1)
 #df_imputed <- complete(imp)
 
 #convert data
-df$结果 <- factor(df$结果,levels = c(0,1),labels = c("No","Yes"))
-df$血小板输注 <- factor(df$血小板输注,,levels = c(0,1), labels = c("<=1",">1"))
+df$Outcome <- factor(df$Outcome,levels = c(0,1),labels = c("No","Yes"))
+df$TrPLT <- factor(df$TrPLT,levels = c(0,1), labels = c("<=1",">1"))
 for (i in 1:354) {
   if(df$Age[i] < 60L) 
     df$Age[i] = 0L
@@ -111,7 +115,7 @@ for (i in 1:354) {
     df$Age[i] = 1L 
 }
 #print(df$Ag)
-df$Age <- factor(df$Age,,levels = c(0,1), labels = c("<60",">=60"))
+df$Age <- factor(df$Age,levels = c(0,1), labels = c("<60",">=60"))
 
 # df$Gender <- factor(df$Gender,levels = c(1,2), labels = c("Male","Female"))
 # df$OP <- factor(df$OP,levels = c(0,1,2,3), labels = c("No","Bentall","Wheat", "David"))
@@ -120,18 +124,20 @@ df$Age <- factor(df$Age,,levels = c(0,1), labels = c("<60",">=60"))
 # df$CVA <- factor(df$CVA,levels = c(0,1), labels = c("No","Yes"))
 # df$CVD <- factor(df$CVD,levels = c(0,1), labels = c("No","Yes"))
 # df$CKD <- factor(df$CKD,levels = c(0,1), labels = c("No","Yes"))
-# df$术前心包积液 <- factor(df$术前心包积液,levels = c(0,1), labels = c("No","Yes"))
+# df$PE <- factor(df$PE,levels = c(0,1), labels = c("No","Yes"))
 # df$Kidney <- factor(df$Kidney,levels = c(0,1), labels = c("No","Yes"))
 
 #basic graph
-ft <- gaze(结果~.,data=df) %>%myft()
+ft <- gaze(Outcome~.,data=df) %>%myft()
 print(ft)
 table2docx(ft,target=paste(output_dir,"Basic_Graph"))
 
 #train and test data
-ind <- createDataPartition(df$结果, p=1, list = FALSE)
+ind <- createDataPartition(df$Outcome, p=1, list = FALSE)
 train_data <- df[ind,] # 训练集
-test_data <- df[-ind,] # 测试集
+if(testflag) {
+  test_data <- df[-ind,] # 测试集
+}
 
 #构建训练集Logistic回归模型的构建
 
@@ -143,11 +149,13 @@ options(datadist="df_dist")
 train_data_dist <- datadist(train_data)
 options(datadist="train_data_dist")
 
+if(testflag) {
 test_data_dist <- datadist(test_data)
 options(datadist="test_data_dist")
+}
 
 #选取部分变量进行拟合
-#fit <- lrm(结果~Gender + Age + BMI + cTnT + BNP + CKMB + Myo + Alb + TP + Cr + BUN + Hb + RBC + HCT + PLT + APTT + PT + D.D + HBP + DM + CVA + AMI + CKD + PE + Kidney + Eth + Bh + Th + RBCu + Plaml + Cry + PLTu + OP,
+#fit <- lrm(Outcome~Gender + Age + BMI + cTnT + BNP + CKMB + Myo + Alb + TP + Cr + BUN + Hb + RBC + HCT + PLT + APTT + PT + D.D + HBP + DM + CVA + AMI + CKD + PE + Kidney + Eth + Bh + Th + RBCu + Plaml + Cry + PLTu + OP,
 #           data = df, x = TRUE, y = TRUE)
 fit <- lrm(input_formula,
           data = df, x = TRUE, y = TRUE)
@@ -158,7 +166,7 @@ print(train_fit)
 sink()
 
 #绘制训练集列线图
-png(filename=paste(output_dir,"Line_Graph1.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Line_Graph.png"), ,width=6*600,height=6*600, res=72*6)
 nom <- nomogram(train_fit,
                 fun = plogis,
                 lp=F,
@@ -181,21 +189,25 @@ dev.off()
 train_pred <- predict(train_fit,
                       newdata=train_data,
                       type = "fitted")
+if(testflag) {
 #测试集预测
 test_pred <- predict(test_fit,
                      newdata=test_data,
                      type="fitted")
+}
 
 #训练集ROC
-train_roc <- roc(train_data$结果,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE, smooth=FALSE)
-#roc4 <- plot.roc(df$结果,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+train_roc <- roc(train_data$Outcome,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE, smooth=FALSE)
+#roc4 <- plot.roc(df$Outcome,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 #rocthr <- ci(roc4, of="thresholds", thresholds="best")
 #plot(rocthr) 
 # 计算AUC及95%CI
 auc(train_roc)# AUC
 ci(train_roc) #AUC95%CI
 
-png(filename=paste(output_dir,"Train_ROC.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_ROC.png"), width=6*600,height=6*600, res=72*6)
+#ggsave("p1.tiff",width = 7,height = 7)
+#tiff("p1.tiff",width = 600,height = 600,units = "px")
 plot(train_roc, col="black",#颜色
      legacy.axes=T,#y轴格式更改
      print.auc=TRUE,#显示AUC面积
@@ -212,8 +224,9 @@ plot(train_roc, col="black",#颜色
 dev.off()
 
 #测试集ROC
-test_roc <- roc(test_data$结果,test_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)
-#roc4 <- plot.roc(df$结果,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+if(testflag) {
+test_roc <- roc(test_data$Outcome,test_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)
+#roc4 <- plot.roc(df$Outcome,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 #rocthr <- ci(roc4, of="thresholds", thresholds="best")
 #plot(rocthr) 
 # 计算AUC及95%CI
@@ -225,9 +238,10 @@ plot(test_roc, col="black",#颜色
      print.auc=TRUE,#显示AUC面积
      print.thres=TRUE,#添加截点和95%CI
      grid=c(0.2,0.2),grid.col=c("black","black"))
+}
 
 #训练集校准曲线
-png(filename=paste(output_dir,"Train_Cal.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_Cal.png"), ,width=6*600,height=6*600, res=72*6)
 train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=100)
 plot(train_cal, xlim=c(0,1), ylim=c(0,1),
      xlab="Predicted Probability", ylab="Observed Probability")
@@ -237,19 +251,21 @@ plot(train_cal, xlim=c(0,1), ylim=c(0,1),
 dev.off()
 
 #测试集校准曲线
+if(testflag) {
 test_fit <- lrm(input_formula, 
            data = test_data, x = TRUE, y = TRUE)
-test_cal <- calibrate(test_fit, data=test_data,, method ="boot", B=100)
+test_cal <- calibrate(test_fit, data=test_data, method ="boot", B=100)
 plot(test_cal)
 #png(filename = paste0("test_cal", ".jpg"),width = 2400,height = 1800,res = 300)
 #print(ggplot(test_cal))
-#dev.off()
+dev.off()
+}
 
 #训练集DCA graph
-png(filename=paste(output_dir,"Train_DCA.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_DCA.png"), width=6*600,height=6*600, res=72*6)
 train_data$pred <- train_pred
-train_data$结果 <- as.numeric(train_data$结果)-1
-train_dc <- decision_curve(结果~pred,
+train_data$Outcome <- as.numeric(train_data$Outcome)-1
+train_dc <- decision_curve(Outcome~pred,
                       data=train_data,family = "binomial")
 # head(train_dc)
 plot_decision_curve(train_dc,
@@ -263,16 +279,17 @@ text(x = 0.0395,y = 0.676,
 dev.off()
 
 #绘制训练集临床影响曲线
-png(filename=paste(output_dir,"Train_Clinical.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Train_Clinical.png"), ,width=6*600,height=6*600, res=72*6)
 plot_clinical_impact(train_dc,
                      cost.benefit.axis = FALSE,
                      confidence.intervals = FALSE)#显示调整
 dev.off()
 
 #测试集DCA graph
+if(testflag) {
 test_data$pred <- test_pred
-test_data$结果 <- as.numeric(test_data$结果)-1
-test_dc <- decision_curve(结果~pred,
+test_data$Outcome <- as.numeric(test_data$Outcome)-1
+test_dc <- decision_curve(Outcome~pred,
                       data=test_data,family = "binomial")
 plot_decision_curve(test_dc,
                     curve.names = "model",
@@ -281,6 +298,7 @@ plot_decision_curve(test_dc,
 plot_clinical_impact(test_dc,
                      cost.benefit.axis = FALSE,
                      confidence.intervals = FALSE)
+}
 
 #wald B OR P convert form R to SPASS
 formatFit <- function(fit){
@@ -306,14 +324,14 @@ formatFit <- function(fit){
 }
 
 
-######################
+##############################################################################################
 #如下全因素逻辑拟合如果报错，可以选择SPASS 软件统计替代。
 #逻辑模型拟合
-# mod <- glm(结果~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
-mod <- glm(结果~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
-             肌红蛋白+ALB+TB+血肌酐+BUN+Hb+RBC+PLT+APTT
-           +PT+FB+D.D+HBP+DM+CVA+CVD+CKD+术前心包积液
-           +Kidney+Pr.LAC+手术结束时乳酸+FFP.ml.+AHF.u.+血小板输注,data = df,control=list(maxit=100),family = binomial(link = "logit"))
+# mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
+mod <- glm(Outcome~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
+             Myo+ALB+TB+SCr+BUN+Hb+RBC+PLT+APTT
+           +PT+FB+D.D+HBP+DM+CVA+CVD+CKD+PE
+           +Kidney+Pr.LAC+PO.LAC+FFP.ml.+AHF.u.+TrPLT,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 
 p<-predict(mod,type='response')
 qplot(sort(p),col='predict')
@@ -349,11 +367,12 @@ sink()
 sink(paste(output_dir,"Hosmer-Lemeshow.txt"), split=TRUE)  # 控制台同样输出
 hoslem.test(mod$y, fitted(mod), g=10)
 sink()
+##############################################################################################
 
-###########################
 
+##############################################################################################
 #模型可视化-绘制森林图
-png(filename=paste(output_dir,"Tree.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Tree.png"), ,width=6*600,height=6*600, res=72*6)
 final_mod <- glm(input_formula ,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 modelPlot(final_mod)
 dev.off()
@@ -395,7 +414,7 @@ formatFit(final_mod)
 
 #GLM 统计 对应 ROC graph optional
 pred <- fitted(final_mod)
-perdic <- prediction(pred,df$结果)
+perdic <- prediction(pred,df$Outcome)
 perf <- performance(perdic,"tpr","fpr")
 plot(perf,lwd=2)
 abline(0,1,lty=2)
@@ -428,7 +447,7 @@ LogMod8
 sink()
 
 #bootstrap 抽样1000次 校验曲线
-png(filename=paste(output_dir,"Bootstrap_CAL.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Bootstrap_CAL.png"), ,width=6*600,height=6*600, res=72*6)
 cal<-calibrate(fit, method = 'boot', B=1000, data = df)
 plot(cal,
      xlim=c(0,1.0),ylim=c(0,1.0),
@@ -446,15 +465,15 @@ text(x = 0.3,y = 0.75,
 dev.off()
 
 #bootstrap 抽样1000次 ROC曲线
-png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=6*600,height=6*600, res=72*6)
 
-predMyo <- df$肌红蛋白
-predSCr <- df$血肌酐
-predPE <- as.numeric(df$术前心包积液)-1
-predPO.LAC <- df$手术结束时乳酸
-predTrPLT <- as.numeric(df$血小板输注)-1
+predMyo <- df$Myo
+predSCr <- df$SCr
+predPE <- as.numeric(df$PE)-1
+predPO.LAC <- df$PO.LAC
+predTrPLT <- as.numeric(df$TrPLT)-1
 
-labels <- df$结果
+labels <- df$Outcome
 n_bootstraps <- 1000  # 设定bootstrap次数
 roc_boot <- NULL  # 存储每次bootstrap的ROC曲线
 dca_boot <- NULL
@@ -523,51 +542,25 @@ text(x = 0.1,y = 0.4,
 dev.off()
 
 roc_mean
+##############################################################################################
 
-
-
-#############################################################################
-# plot(df$结果)
-# sens.ci <- ci.se(df$结果, specificities=seq(0, 1, .1))
-# #ci.se,在特定情况下计算灵敏度的置信区间
-# plot(sens.ci, type="bars")
-# 
-# 
-# pdf("bootstrap_ROC.pdf",width =10,height = 5)
-# par(mfrow=c(1,2))
-# plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
-# for (i in 1:n_bootstraps) {
-#   lines(roc_boot[[i]], col = "grey", alpha = 0.2)
-# }
-# 
-# # 汇总所有bootstrap样本的ROC曲线
-# roc_mean <- roc(boot_labels, boot_pred,ci=TRUE)  # 使用原始数据计算平均ROC曲线
-# lines(roc_mean, col = "blue", lwd = 2)  # 绘制平均ROC曲线
-# legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
-# 
-# #ci.se计算特定特异度下灵敏度的置信区间
-# plot(df$结果,main="ci.se function")
-# sens.ci <- ci.se(df$结果, specificities=seq(0, 1, .1),boot.n=1000)
-# #ci.se,在特定情况下计算灵敏度的置信区间
-# plot(sens.ci, type="bars")
-# 
-# dev.off()
-
+##############################################################################################
 #lasso graphic
+if(0){
 model_mat <-model.matrix(~+Myo+SCr+PE+PO.LAC+TrPLT,df)###把分类变量变成哑变量矩阵形式
 x<-as.matrix(data.frame(model_mat))#重新组合成数据
-y<-df$结果
+y<-df$Outcome
 f1 = glmnet(x, y , family="binomial", nlambda=100, alpha=1) #这里alpha=1为LASSO回归，如果等于0就是岭回归
 f1
-png(filename=paste(output_dir,"Lasso Lambda.png"), ,width=3*600,height=3*600, res=72*3)
+png(filename=paste(output_dir,"Lasso Lambda.png"), ,width=6*600,height=6*600, res=72*6)
 plot(f1, xvar="lambda", label=TRUE)
 dev.off()
 
 # 交叉验证
 set.seed(123)
 cvfit = cv.glmnet(x, y,type.measure = "class", nfolds = 20,family="binomial")
-#这时对模型绘图展示的是不同的结果
-png(filename=paste(output_dir,"Lasso Log(λ).png"), ,width=3*600,height=3*600, res=72*3)
+#这时对模型绘图展示的是不同的Outcome
+png(filename=paste(output_dir,"Lasso Log(λ).png"), ,width=6*600,height=6*600, res=72*6)
 plot(cvfit)
 dev.off()
 
@@ -587,3 +580,5 @@ l.coef2
 
 #指定lambda在0.05和0.01时预测新样本的类别，type = "class"指定输出值为类别
 predict(f1, newx = x[1:10,], type = "class", s = c(0.05, 0.01))
+}
+##############################################################################################

@@ -1,0 +1,53 @@
+
+Call:
+glm(formula = Outcome ~ Gender + Age + BMI + OP + hs.TnT + NT.proBNP + 
+    CKMB + Myo + ALB + TB + SCr + BUN + Hb + RBC + PLT + APTT + 
+    PT + FB + D.D + HBP + DM + CVA + CVD + CKD + PE + Kidney + 
+    Pr.LAC + PO.LAC + FFP.ml. + AHF.u. + TrPLT, family = binomial(link = "logit"), 
+    data = df, control = list(maxit = 100))
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)   
+(Intercept) -2.119e+00  5.028e+00  -0.421  0.67347   
+Gender       6.641e-01  7.537e-01   0.881  0.37825   
+Age>=60      1.815e-01  5.474e-01   0.331  0.74029   
+BMI          5.264e-03  7.080e-02   0.074  0.94073   
+OP          -3.597e-02  4.909e-01  -0.073  0.94159   
+hs.TnT      -3.078e-03  1.752e-03  -1.757  0.07892 . 
+NT.proBNP    2.052e-04  1.375e-04   1.493  0.13556   
+CKMB        -2.802e-02  3.740e-02  -0.749  0.45371   
+Myo          1.679e-03  6.629e-04   2.532  0.01133 * 
+ALB         -2.880e-02  9.646e-02  -0.299  0.76529   
+TB           2.849e-02  6.925e-02   0.411  0.68074   
+SCr          1.843e-02  5.845e-03   3.153  0.00162 **
+BUN         -7.193e-02  7.875e-02  -0.913  0.36105   
+Hb          -7.952e-03  2.831e-02  -0.281  0.77879   
+RBC          9.206e-03  8.239e-01   0.011  0.99108   
+PLT         -7.688e-03  5.931e-03  -1.296  0.19488   
+APTT         2.400e-03  1.191e-02   0.201  0.84032   
+PT          -1.966e-01  1.716e-01  -1.146  0.25193   
+FB          -2.009e-02  1.845e-01  -0.109  0.91328   
+D.D         -1.694e-02  3.639e-02  -0.466  0.64151   
+HBP          3.198e-01  5.334e-01   0.599  0.54890   
+DM          -4.650e-02  9.891e-01  -0.047  0.96250   
+CVA         -1.584e+01  2.025e+03  -0.008  0.99376   
+CVD         -1.857e+01  1.734e+03  -0.011  0.99146   
+CKD          7.425e-01  1.427e+00   0.520  0.60285   
+PE           1.771e+00  5.590e-01   3.168  0.00153 **
+Kidney       5.937e-01  5.139e-01   1.155  0.24794   
+Pr.LAC       1.467e-01  1.547e-01   0.948  0.34298   
+PO.LAC       2.259e-01  7.897e-02   2.861  0.00423 **
+FFP.ml.     -1.695e-04  1.043e-03  -0.162  0.87096   
+AHF.u.       1.129e-02  1.143e-01   0.099  0.92133   
+TrPLT>1      1.801e+00  1.006e+00   1.790  0.07344 . 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 249.73  on 353  degrees of freedom
+Residual deviance: 147.53  on 322  degrees of freedom
+AIC: 211.53
+
+Number of Fisher Scoring iterations: 17
+

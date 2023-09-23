@@ -1,0 +1,14 @@
+Generalized Linear Model 
+
+354 samples
+  5 predictor
+  2 classes: 'No', 'Yes' 
+
+No pre-processing
+Resampling: Bootstrapped (1000 reps) 
+Summary of sample sizes: 354, 354, 354, 354, 354, 354, ... 
+Resampling results:
+
+  Accuracy   Kappa    
+  0.8907192  0.3250707
+

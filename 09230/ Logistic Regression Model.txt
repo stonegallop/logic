@@ -1,0 +1,19 @@
+Logistic Regression Model
+
+lrm(formula = input_formula, data = train_data, x = TRUE, y = TRUE)
+
+                       Model Likelihood      Discrimination    Rank Discrim.    
+                             Ratio Test             Indexes          Indexes    
+Obs           354    LR chi2      78.42      R2       0.393    C       0.891    
+ No           314    d.f.             5      R2(5,354)0.187    Dxy     0.783    
+ Yes           40    Pr(> chi2) <0.0001    R2(5,106.4)0.498    gamma   0.783    
+max |deriv| 4e-05                            Brier    0.072    tau-a   0.157    
+
+          Coef    S.E.   Wald Z Pr(>|Z|)
+Intercept -5.0669 0.5263 -9.63  <0.0001 
+Myo        0.0011 0.0004  2.91  0.0037  
+SCr        0.0137 0.0029  4.70  <0.0001 
+PE         1.4879 0.4320  3.44  0.0006  
+PO.LAC     0.1894 0.0609  3.11  0.0019  
+TrPLT=>1   2.1612 0.8728  2.48  0.0133  
+
