@@ -172,6 +172,8 @@ nom <- nomogram(train_fit,
                 lp=F,
                 funlabel="Risk of Outcome")
 plot(nom,lp=FALSE)
+if(0)
+{
 text(x = 0.3,y = ,
      labels = "石腾腾",
      family="A",
@@ -182,6 +184,7 @@ text(x = 0.3,y = 0.4,
      family="A",
      cex = 1,
      col = "black")
+}
 #text(0.32,0.4,"华文彩云",family="A"); 
 dev.off()
 
