@@ -218,8 +218,8 @@ plot(train_roc, col="black",#颜色
      print.thres.cex=1,
      print.auc.x=0.5, print.auc.y=0.5,print.auc.cex=1,
      grid=c(0.1,0.1),grid.col=c("gray","gray"),
-     auc.polygon=TRUE, 
-     max.auc.polygon=TRUE,
+     auc.polygon=FALSE,#TRUE 显示阴影灰色, FALSE 白色
+     max.auc.polygon=FALSE,#TRUE 显示阴影灰色, FALSE 白色
      auc.polygon.col="gray",
      type="l",lty=1,xlab = "1-Specificity",
      ylab="Sensitivities",lwd=2, xgap.axis = 0.1, ygap.axis =0.1,
