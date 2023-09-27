@@ -330,11 +330,14 @@ formatFit <- function(fit){
 ##############################################################################################
 #如下全因素逻辑拟合如果报错，可以选择SPASS 软件统计替代。
 #逻辑模型拟合
-# mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
-mod <- glm(Outcome~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
-             Myo+ALB+TB+SCr+BUN+Hb+RBC+PLT+APTT
-           +PT+FB+D.D+HBP+DM+CVA+CVD+CKD+PE
-           +Kidney+Pr.LAC+PO.LAC+FFP.ml.+AHF.u.+TrPLT,data = df,control=list(maxit=100),family = binomial(link = "logit"))
+df$OPT.h. <- as.numeric(df$OPT.h.)
+df$RBC.u. <- as.numeric(df$RBC.u.)
+mod <- glm(Outcome~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
+
+#mod <- glm(Outcome~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
+#             Myo+ALB+TB+SCr+BUN+Hb+RBC+PLT+APTT
+#           +PT+FB+D.D+HBP+DM+CVA+CVD+CKD+PE
+#           +Kidney+Pr.LAC+PO.LAC+TCPB.min.+BCPB.min.+FFP.ml.+OPT.h.+RBC.u.+AHF.u.+TrPLT,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 
 p<-predict(mod,type='response')
 qplot(sort(p),col='predict')
@@ -457,14 +460,14 @@ plot(cal,
      xlab = "Predicted Probability",
      ylab = "Observed Probability"
 )
-text(x = 0.3,y = 0.85,
-     labels = "Hosmer and Lemeshow:",
-     cex = 1,
-     col = "black")
-text(x = 0.3,y = 0.75,
-     labels = "p-value = 0.8084",
-     cex = 1,
-     col = "black")
+#text(x = 0.3,y = 0.85,
+#     labels = "Hosmer and Lemeshow:",
+#     cex = 1,
+#     col = "black")
+#text(x = 0.3,y = 0.75,
+#     labels = "p-value = 0.8084",
+#     cex = 1,
+#     col = "black")
 dev.off()
 
 #bootstrap 抽样1000次 ROC曲线
