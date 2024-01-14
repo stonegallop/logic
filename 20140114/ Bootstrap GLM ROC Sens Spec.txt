@@ -1,0 +1,14 @@
+Generalized Linear Model 
+
+354 samples
+  5 predictor
+  2 classes: 'No', 'Yes' 
+
+No pre-processing
+Resampling: Bootstrapped (1000 reps) 
+Summary of sample sizes: 354, 354, 354, 354, 354, 354, ... 
+Resampling results:
+
+  ROC        Sens       Spec     
+  0.8628655  0.9662958  0.3078269
+

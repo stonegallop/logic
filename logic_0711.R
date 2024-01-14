@@ -538,19 +538,19 @@ text(x = 0.225,y = 0.5,
      labels = "AUC Mean",
      cex = 1,
      col = "black")
-text(x = 0.225,y = 0.4,
-     labels = "AUC SD",
-     cex = 1,
-     col = "black")
+#text(x = 0.225,y = 0.4,
+#     labels = "AUC SD",
+#     cex = 1,
+#     col = "black")
 
 text(x = 0.1,y = 0.5,
      labels = round(auc_mean,5),
      cex = 1,
      col = "black")
-text(x = 0.1,y = 0.4,
-     labels = round(auc_sd,5),
-     cex = 1,
-     col = "black")
+#text(x = 0.1,y = 0.4,
+#     labels = round(auc_sd,5),
+#     cex = 1,
+#     col = "black")
 
 dev.off()
 

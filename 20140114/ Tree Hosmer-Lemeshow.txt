@@ -1,0 +1,6 @@
+
+	Hosmer and Lemeshow goodness of fit (GOF) test
+
+data:  final_mod$y, fitted(final_mod)
+X-squared = 6.3956, df = 8, p-value = 0.603
+
