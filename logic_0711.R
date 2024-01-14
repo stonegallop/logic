@@ -86,7 +86,7 @@ input_excel <- "xuetou0713.xlsx"
 #input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 
-output_dir <- "D:/Project/Rproject/logic/09230/"
+output_dir <- "D:/Project/Rproject/logic/20140114/"
 dir.create(output_dir)
 
 dataset <- read_excel(input_excel)
@@ -212,7 +212,7 @@ png(filename=paste(output_dir,"Train_ROC.png"), width=6*600,height=6*600, res=72
 #ggsave("p1.tiff",width = 7,height = 7)
 #tiff("p1.tiff",width = 600,height = 600,units = "px")
 plot(train_roc, col="black",#颜色
-     legacy.axes=T,#y轴格式更改
+     legacy.axes=TRUE,#y轴格式更改
      print.auc=TRUE,#显示AUC面积
      print.thres=TRUE,#添加截点和95%CI
      print.thres.cex=1,
@@ -222,8 +222,9 @@ plot(train_roc, col="black",#颜色
      max.auc.polygon=FALSE,#TRUE 显示阴影灰色, FALSE 白色
      auc.polygon.col="gray",
      type="l",lty=1,xlab = "1-Specificity",
-     ylab="Sensitivities",lwd=2, xgap.axis = 0.1, ygap.axis =0.1,
-     xlim=c(1,0), ylim=c(0,1))
+     ylab="Sensitivities",lwd=1, xgap.axis = 0.1, ygap.axis =0.1,
+     xlim=c(1,0), ylim=c(0,1), xaxs = "i", yaxs = "i")
+
 dev.off()
 
 #测试集ROC
@@ -240,14 +241,15 @@ plot(test_roc, col="black",#颜色
      legacy.axes=T,#y轴格式更改
      print.auc=TRUE,#显示AUC面积
      print.thres=TRUE,#添加截点和95%CI
-     grid=c(0.2,0.2),grid.col=c("black","black"))
+     grid=c(0.2,0.2),grid.col=c("black","black"), xaxs = "i", yaxs = "i")
 }
 
 #训练集校准曲线
 png(filename=paste(output_dir,"Train_Cal.png"), ,width=6*600,height=6*600, res=72*6)
 train_cal <- calibrate(train_fit, data=train_data, method ="boot", B=100)
-plot(train_cal, xlim=c(0,1), ylim=c(0,1),
-     xlab="Predicted Probability", ylab="Observed Probability")
+plot(train_cal, xlim=c(0.00,1.0), ylim=c(0.00,1.0),
+     xlab="Predicted Probability", ylab="Observed Probability",
+     xaxs = "i", yaxs = "i")
 # plot(train_cal, xlim=c(0,1), ylim=c(0,1),
 #      xlab="Predicted Probability", ylab="Observed Probability",
 #      subtitles = FALSE)#  subtitles = FALSE 不显示Mean absolute error=0.025等信息
@@ -258,7 +260,7 @@ if(testflag) {
 test_fit <- lrm(input_formula, 
            data = test_data, x = TRUE, y = TRUE)
 test_cal <- calibrate(test_fit, data=test_data, method ="boot", B=100)
-plot(test_cal)
+plot(test_cal, xaxs = "i", yaxs = "i")
 #png(filename = paste0("test_cal", ".jpg"),width = 2400,height = 1800,res = 300)
 #print(ggplot(test_cal))
 dev.off()
@@ -275,10 +277,14 @@ plot_decision_curve(train_dc,
                     curve.names = "model",
                     col = c("blue"),
                     confidence.intervals = F)#显示调整
-text(x = 0.0395,y = 0.676,
-     labels = ".",
-     cex = 1,
-     col = "black")
+#text(x = 0.0395,y = 0.676,
+#     labels = ".",
+#     cex = 2,
+#     col = "black")
+#text(x = 0.669,y = 0,
+#     labels = ".",
+#     cex = 2,
+#     col = "black")
 dev.off()
 
 #绘制训练集临床影响曲线
@@ -422,7 +428,7 @@ formatFit(final_mod)
 pred <- fitted(final_mod)
 perdic <- prediction(pred,df$Outcome)
 perf <- performance(perdic,"tpr","fpr")
-plot(perf,lwd=2)
+plot(perf,lwd=2, xaxs = "i", yaxs = "i")
 abline(0,1,lty=2)
 
 #Bootstrap 抽样统计
@@ -458,7 +464,8 @@ cal<-calibrate(fit, method = 'boot', B=1000, data = df)
 plot(cal,
      xlim=c(0,1.0),ylim=c(0,1.0),
      xlab = "Predicted Probability",
-     ylab = "Observed Probability"
+     ylab = "Observed Probability",
+     xaxs = "i", yaxs = "i"
 )
 #text(x = 0.3,y = 0.85,
 #     labels = "Hosmer and Lemeshow:",
@@ -499,7 +506,7 @@ for (i in 1:n_bootstraps) {
   roc_boot[[i]] <- roc(boot_labels, boot_predMyo + boot_predSCr + boot_predPE + boot_predPO.LAC + boot_predTrPLT, levels=c("No","Yes"), direction = "<")
 }
 
-plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate")
+plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate", xaxs = "i", yaxs = "i",legacy.axes=TRUE)
 
 for (i in 1:n_bootstraps) {
   lines(roc_boot[[i]], col = "grey", alpha = 0.2)
@@ -509,7 +516,7 @@ for (i in 1:n_bootstraps) {
 #roc_mean <- roc(labels,predhs.TnT + predSCr + predMyo + predPE + predOp.LAC + predPLT.u., levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 roc_mean <- roc(labels, predMyo+predSCr+predPE+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<", ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 
-lines(roc_mean, col = "blue", lwd = 2)  # 绘制平均ROC曲线
+lines(roc_mean, col = "blue", lwd = 2, xaxs = "i", yaxs = "i")  # 绘制平均ROC曲线
 legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
 # roc4 <- plot.roc(labels,predMyo+predSCr+predPE+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 # rocthr <- ci(roc4, of="thresholds", thresholds="best")
