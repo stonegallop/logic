@@ -20,6 +20,8 @@ install.packages("ResourceSelection")
 install.packages("")
 install.packages("extrafont")
 install.packages("sysfonts")
+install.packages("ggDCA")
+install.packages("devtools")
 }
 # install.packages("officer")
 # install.packages("xtable")
@@ -29,7 +31,9 @@ install.packages("sysfonts")
 #   devtools::install_github("yikeshu0611/ggDCA")
 # }
 #
-# library(ggDCA)
+library(rms)
+devtools::install_github('yikeshu0611/ggDCA')
+library(ggDCA)
 
 # library(foreign)
 library(ResourceSelection)
@@ -86,7 +90,7 @@ input_excel <- "xuetou0713.xlsx"
 #input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 input_formula <- Outcome~Myo+SCr+PE+PO.LAC+TrPLT
 
-output_dir <- "D:/Project/Rproject/logic/20140114/"
+output_dir <- "D:/Project/Rproject/logic/20240330/"
 dir.create(output_dir)
 
 dataset <- read_excel(input_excel)
@@ -159,6 +163,7 @@ options(datadist="test_data_dist")
 #           data = df, x = TRUE, y = TRUE)
 fit <- lrm(input_formula,
           data = df, x = TRUE, y = TRUE)
+
 train_fit <- lrm(input_formula,
            data = train_data, x = TRUE, y = TRUE)
 sink(paste(output_dir,"Logistic Regression Model.txt"), split=TRUE)  # 控制台同样输出
@@ -275,8 +280,11 @@ train_dc <- decision_curve(Outcome~pred,
 # head(train_dc)
 plot_decision_curve(train_dc,
                     curve.names = "model",
-                    col = c("blue"),
-                    confidence.intervals = F)#显示调整
+                    col = c("black"),
+                    confidence.intervals = F,
+                    cost.benefit.axis = F,
+                    standardize = F,
+                    xaxs = "i", yaxs = "i")#显示调整
 #text(x = 0.0395,y = 0.676,
 #     labels = ".",
 #     cex = 2,
