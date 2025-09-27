@@ -190,6 +190,8 @@ knots <- fit$Design$parms$CPBHbMin
 cat("CPBHbMin节点位置:", knots, "\n")  # 例如: 6.0 8.5 11.0
 
 # 检查CPBHbMin分布
+hist(df$CPBHbMin)
+head(df$CPBHbMin)
 summary(df$CPBHbMin)
 
 # 模型摘要
@@ -212,65 +214,187 @@ plot(Predict(fit, CPBHbMin, fun = plogis),
      main = "CPBHbMin与AKI概率的关系",
      ylab = "AKI发生概率")
 
-# 3. 调整其他变量后的RCS曲线
-plot(Predict(fit, CPBHbMin, Age = median(df$Age, na.rm = TRUE),
-             BMI = median(df$BMI, na.rm = TRUE),
-             Sex = 0),  # 假设0代表女性
-     main = "调整后的CPBHbMin效应")
+# # 3. 调整其他变量后的RCS曲线
+# plot(Predict(fit, CPBHbMin, Age = median(df$Age, na.rm = TRUE),
+#              BMI = median(df$BMI, na.rm = TRUE),
+#              Sex = 0),  # 假设0代表女性
+#      main = "调整后的CPBHbMin效应")
+# 
+# # 4. 3D效应图（如果有交互项）
+# plot(Predict(fit, CPBHbMin, Age), 
+#      main = "CPBHbMin和Age的交互效应")
 
-# 4. 3D效应图（如果有交互项）
-plot(Predict(fit, CPBHbMin, Age), 
-     main = "CPBHbMin和Age的交互效应")
+
+#方法3 RCS和柱状图同一张图显示
+# 获取预测值
+pred <- Predict(fit, CPBHbMin, fun = plogis)
+pred_df <- as.data.frame(pred)
+
+# 获取拐点
+knots <- attr(rcs(df$CPBHbMin, 4), "parms")
+
+# 创建基础柱状图
+hist_data <- hist(df$CPBHbMin, breaks = 30, plot = FALSE)
+
+# 创建图形
+plot(hist_data, 
+     col = "lightgray", 
+     border = "white",
+     main = "CPBHbMin与AKI概率的关系及分布",
+     xlab = "CPBHbMin值",
+     ylab = "频数",
+     ylim = c(0, max(hist_data$counts) * 1.2))
+
+# 添加第二个y轴
+par(new = TRUE)
+plot(pred_df$CPBHbMin, pred_df$yhat, 
+     type = "l", 
+     col = "blue", 
+     lwd = 2,
+     axes = FALSE, 
+     xlab = "", 
+     ylab = "",
+     ylim = c(0, 1))
+axis(4, at = seq(0, 1, 0.2), labels = percent(seq(0, 1, 0.2)))
+mtext("AKI发生概率", side = 4, line = 3)
+
+# 添加置信区间
+polygon(c(pred_df$CPBHbMin, rev(pred_df$CPBHbMin)), 
+        c(pred_df$lower, rev(pred_df$upper)), 
+        col = rgb(0, 0, 1, 0.1), 
+        border = NA)
+
+# 添加拐点
+abline(v = knots, col = "red", lty = 2, lwd = 1)
+
+# 添加图例
+legend("topright", 
+       legend = c("AKI概率", "95% CI", "拐点"),
+       col = c("blue", "lightblue", "red"),
+       lty = c(1, NA, 2),
+       lwd = c(2, NA, 1),
+       pch = c(NA, 15, NA),
+       pt.cex = 2,
+       bty = "n")
 
 
-# 获取预测数据
-pred_data <- Predict(fit, CPBHbMin, fun = plogis)
-pred_df <- as.data.frame(pred_data)
+# # 获取预测数据
+# pred_data <- Predict(fit, CPBHbMin, fun = plogis)
+# pred_df <- as.data.frame(pred_data)
+# 
+# # 创建ggplot图表
+# ggplot(pred_df, aes(x = CPBHbMin, y = yhat)) +
+#   geom_line(color = "blue", size = 1.2) +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), 
+#               alpha = 0.2, fill = "blue") +
+#   labs(title = "CPBHbMin与AKI发生概率的RCS关系",
+#        x = "CPBHbMin", 
+#        y = "AKI发生概率") +
+#   theme_minimal() +
+#   theme(plot.title = element_text(hjust = 0.5, size = 14),
+#         axis.title = element_text(size = 12))
 
-# 创建ggplot图表
-ggplot(pred_df, aes(x = CPBHbMin, y = yhat)) +
-  geom_line(color = "blue", size = 1.2) +
-  geom_ribbon(aes(ymin = lower, ymax = upper), 
-              alpha = 0.2, fill = "blue") +
-  labs(title = "CPBHbMin与AKI发生概率的RCS关系",
-       x = "CPBHbMin", 
-       y = "AKI发生概率") +
-  theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5, size = 14),
-        axis.title = element_text(size = 12))
+# # 保存图表
+# #ggsave("rcs_curve_ggplot.png", width = 10, height = 6, dpi = 300)
+# 
+# # === 额外分析：检查模型拟合 ===
+# # 模型摘要
+# cat("\n=== 模型摘要 ===\n")
+# print(fit)
+# 
+# # 检查RCS的统计显著性
+# cat("\n=== RCS项的统计检验 ===\n")
+# anova(fit)
+# 
+# # 检查模型的校准度
+# cal <- calibrate(fit, B = 200)
+# plot(cal, main = "模型校准曲线")
+# 
+# # === 节点位置的详细分析 ===
+# cat("\n=== 节点位置分析 ===\n")
+# cat("节点位置:", knots, "\n")
+# cat("节点对应的百分位数:\n")
+# quantile(df$CPBHbMin, probs = c(0.1, 0.5, 0.9), na.rm = TRUE)
+# 
+# # === 效应量分析 ===
+# # 计算不同CPBHbMin水平的OR值
+# cat("\n=== 不同CPBHbMin水平的效应量 ===\n")
+# cpb_values <- quantile(df$CPBHbMin, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+# for (i in 1:length(cpb_values)) {
+#   pred <- Predict(fit, CPBHbMin = cpb_values[i], fun = exp)
+#   cat(sprintf("CPBHbMin = %.1f: OR = %.3f (95%% CI: %.3f-%.3f)\n",
+#               cpb_values[i], pred$yhat, pred$lower, pred$upper))
+# }
 
-# 保存图表
-ggsave("rcs_curve_ggplot.png", width = 10, height = 6, dpi = 300)
+#方法1 分别两个图
+# 设置图形布局：上下两个图形
+par(mfrow = c(2, 1), mar = c(4, 4, 2, 1))
 
-# === 额外分析：检查模型拟合 ===
-# 模型摘要
-cat("\n=== 模型摘要 ===\n")
-print(fit)
+# 1. 绘制RCS曲线（上方图形）
+plot(Predict(fit, CPBHbMin, fun = plogis), 
+     main = "CPBHbMin与AKI概率的关系",
+     ylab = "AKI发生概率",
+     conf.int = TRUE, 
+     rug = TRUE, 
+     pch = 19, 
+     col = "blue", 
+     lwd = 2)
 
-# 检查RCS的统计显著性
-cat("\n=== RCS项的统计检验 ===\n")
-anova(fit)
+# 添加拐点标记
+knots <- attr(rcs(df$CPBHbMin, 4), "parms")
+abline(v = knots, col = "red", lty = 2, lwd = 1)
 
-# 检查模型的校准度
-cal <- calibrate(fit, B = 200)
-plot(cal, main = "模型校准曲线")
+# 2. 绘制柱状图（下方图形）
+hist(df$CPBHbMin, 
+     breaks = 30, 
+     col = "lightgray", 
+     border = "white",
+     main = "CPBHbMin分布",
+     xlab = "CPBHbMin值",
+     ylab = "频数")
 
-# === 节点位置的详细分析 ===
-cat("\n=== 节点位置分析 ===\n")
-cat("节点位置:", knots, "\n")
-cat("节点对应的百分位数:\n")
-quantile(df$CPBHbMin, probs = c(0.1, 0.5, 0.9), na.rm = TRUE)
+# 重置图形参数
+par(mfrow = c(1, 1))
 
-# === 效应量分析 ===
-# 计算不同CPBHbMin水平的OR值
-cat("\n=== 不同CPBHbMin水平的效应量 ===\n")
-cpb_values <- quantile(df$CPBHbMin, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
-for (i in 1:length(cpb_values)) {
-  pred <- Predict(fit, CPBHbMin = cpb_values[i], fun = exp)
-  cat(sprintf("CPBHbMin = %.1f: OR = %.3f (95%% CI: %.3f-%.3f)\n",
-              cpb_values[i], pred$yhat, pred$lower, pred$upper))
-}
+#方法2 上下两张图
+library(patchwork) # 用于组合图形
 
+# 设置数据分布
+ddist <- datadist(df)
+options
+(datadist = 'ddist')
+
+# 拟合模型
+fit <- lrm(AKI ~ rcs(CPBHbMin, 4), data = df)
+
+# 获取预测值
+pred <- Predict(fit, CPBHbMin, fun = plogis)
+pred_df <- as.data.frame(pred)
+
+# 获取拐点
+knots <- attr(rcs(df$CPBHbMin, 4), "parms")
+
+# 创建RCS曲线图
+p1 <- ggplot(pred_df, aes(x = CPBHbMin, y = yhat)) +
+  geom_line(color = "blue", size = 1) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, fill = "blue") +
+  geom_vline(xintercept = knots, linetype = "dashed", color = "red") +
+  labs(title = "CPBHbMin与AKI概率的关系",
+  x = "CPBHbMin",
+  y = "AKI发生概率") +
+  theme_minimal()
+
+# 创建柱状图
+p2 <- ggplot(df, aes(x = CPBHbMin)) +
+  geom_histogram(bins = 30, fill = "lightgray", color = "white") +
+  labs(title = "CPBHbMin分布",
+  x = "CPBHbMin值",
+  y = "频数") +
+  theme_minimal()
+
+# 组合两个图形
+combined_plot <- p1 / p2 + plot_layout(heights = c(3, 1))
+print(combined_plot)
 
 ##可视化模型,美化
 ##############################################################################################

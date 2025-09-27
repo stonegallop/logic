@@ -214,7 +214,7 @@ test_pred <- predict(test_fit,
 }
 
 #训练集ROC
-train_roc <- roc(train_data$AKI,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE, smooth=FALSE)
+train_roc <- roc(train_data$AKI,train_pred, ci=TRUE, print.auc=TRUE, smooth=FALSE)
 #roc4 <- plot.roc(df$AKI,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 #rocthr <- ci(roc4, of="thresholds", thresholds="best")
 #plot(rocthr) 
@@ -243,7 +243,7 @@ dev.off()
 
 #测试集ROC
 if(testflag) {
-test_roc <- roc(test_data$AKI,test_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)
+test_roc <- roc(test_data$AKI,test_pred, ci=TRUE, print.auc=TRUE)
 #roc4 <- plot.roc(df$AKI,train_pred, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 #rocthr <- ci(roc4, of="thresholds", thresholds="best")
 #plot(rocthr) 
@@ -353,8 +353,6 @@ formatFit <- function(fit){
 ##############################################################################################
 #如下全因素逻辑拟合如果报错，可以选择SPASS 软件统计替代。
 #逻辑模型拟合
-df$OPT.h. <- as.numeric(df$OPT.h.)
-df$RBC.u. <- as.numeric(df$RBC.u.)
 mod <- glm(AKI~.,data = df,control=list(maxit=100),family = binomial(link = "logit"))
 
 #mod <- glm(AKI~ Gender+Age+BMI+OP+hs.TnT+NT.proBNP+CKMB+
@@ -369,23 +367,23 @@ sink(paste(output_dir,"GLM Summary.txt"), split=TRUE)  # 控制台同样输出
 summary(mod)
 sink()
 
-sink(paste(output_dir,"GLM Confint.txt"), split=TRUE)  # 控制台同样输出
-confint(mod)
-sink()
+# sink(paste(output_dir,"GLM Confint.txt"), split=TRUE)  # 控制台同样输出
+# confint(mod)
+# sink()
 
-#多元逻辑回归
-sink(paste(output_dir,"GLM AutoReg.txt"), split=TRUE)  # 控制台同样输出
-autoReg(mod)
-sink()
-
-#单变量和多元逻辑回归回归（单变量向后选择）
-sink(paste(output_dir,"GLM AutoReg Uni.txt"), split=TRUE)  # 控制台同样输出
-autoReg(mod,uni=T)
-sink()
-
-sink(paste(output_dir,"GLM AutoReg Uni Final.txt"), split=TRUE)  # 控制台同样输出
-autoReg(mod,uni=F,final=T)
-sink()
+# #多元逻辑回归
+# sink(paste(output_dir,"GLM AutoReg.txt"), split=TRUE)  # 控制台同样输出
+# autoReg(mod)
+# sink()
+# 
+# #单变量和多元逻辑回归回归（单变量向后选择）
+# sink(paste(output_dir,"GLM AutoReg Uni.txt"), split=TRUE)  # 控制台同样输出
+# autoReg(mod,uni=T)
+# sink()
+# 
+# sink(paste(output_dir,"GLM AutoReg Uni Final.txt"), split=TRUE)  # 控制台同样输出
+# autoReg(mod,uni=F,final=T)
+# sink()
 
 #查看模型的统计量
 sink(paste(output_dir,"GLM Gaze.txt"), split=TRUE)  # 控制台同样输出
@@ -440,138 +438,140 @@ sink()
 
 #convert to SPASS B Wald OR P Value.
 formatFit(final_mod)
-
-#GLM 统计 对应 ROC graph optional
-pred <- fitted(final_mod)
-perdic <- prediction(pred,df$AKI)
-perf <- performance(perdic,"tpr","fpr")
-plot(perf,lwd=2, xaxs = "i", yaxs = "i")
-abline(0,1,lty=2)
-
-#Bootstrap 抽样统计
-#Bootstrap简单交叉验证
-form.bestglm<-as.formula(input_formula)
-train.control_7 <-trainControl(method = "boot",
-                               number=1000)
-set.seed(1)
-LogMod7 <- train(form.bestglm, 
-                 data=df, 
-                 trControl=train.control_7, 
-                 method="glm")
-sink(paste(output_dir,"Bootstrap GLM Accurarcy Kappa.txt"), split=TRUE)  # 控制台同样输出
-LogMod7
-sink()
-
-train.control_8 <-trainControl(method = "boot",
-                               number=1000,
-                               classProbs=TRUE,
-                               summaryFunction=twoClassSummary)
-set.seed(1)
-LogMod8 <- train(form.bestglm, 
-                 data=df, 
-                 trControl=train.control_8, 
-                 method="glm")
-sink(paste(output_dir,"Bootstrap GLM ROC Sens Spec.txt"), split=TRUE)  # 控制台同样输出
-LogMod8
-sink()
-
-#bootstrap 抽样1000次 校验曲线
-png(filename=paste(output_dir,"Bootstrap_CAL.png"), ,width=6*600,height=6*600, res=72*6)
-cal<-calibrate(fit, method = 'boot', B=1000, data = df)
-plot(cal,
-     xlim=c(0,1.0),ylim=c(0,1.0),
-     xlab = "Predicted Probability",
-     ylab = "Observed Probability",
-     xaxs = "i", yaxs = "i"
-)
-#text(x = 0.3,y = 0.85,
-#     labels = "Hosmer and Lemeshow:",
-#     cex = 1,
-#     col = "black")
-#text(x = 0.3,y = 0.75,
-#     labels = "p-value = 0.8084",
-#     cex = 1,
-#     col = "black")
-dev.off()
-
-#bootstrap 抽样1000次 ROC曲线
-png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=6*600,height=6*600, res=72*6)
-
-predMyo <- df$Myo
-predSCr <- df$SCr
-predPE <- as.numeric(df$PE)-1
-predPO.LAC <- df$PO.LAC
-predTrPLT <- as.numeric(df$TrPLT)-1
-
-labels <- df$AKI
-n_bootstraps <- 1000  # 设定bootstrap次数
-roc_boot <- NULL  # 存储每次bootstrap的ROC曲线
-dca_boot <- NULL
-
-for (i in 1:n_bootstraps) {
-  # 从原始数据中进行有放回抽样
-  boot_indices <- sample(length(labels), replace = TRUE)
-  boot_labels <- labels[boot_indices]
-  boot_predMyo <- predMyo[boot_indices]
-  boot_predSCr <- predSCr[boot_indices]
-  boot_predPE <- predPE[boot_indices]
-  boot_predPO.LAC <- predPO.LAC[boot_indices]
-  boot_predTrPLT <- predTrPLT[boot_indices]
-
-  # 计算bootstrap样本的ROC曲线
-  # roc_boot[[i]] <- roc(boot_labels, boot_predhs.TnT + boot_predSCr + boot_predMyo + boot_predPE + boot_predOp.LAC + boot_predPLT.u., levels=c("No","Yes"), direction = "<")
-  roc_boot[[i]] <- roc(boot_labels, boot_predMyo + boot_predSCr + boot_predPE + boot_predPO.LAC + boot_predTrPLT, levels=c("No","Yes"), direction = "<")
-}
-
-plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate", xaxs = "i", yaxs = "i",legacy.axes=TRUE)
-
-for (i in 1:n_bootstraps) {
-  lines(roc_boot[[i]], col = "grey", alpha = 0.2)
-}
-
-# 汇总所有bootstrap样本的ROC曲线
-#roc_mean <- roc(labels,predhs.TnT + predSCr + predMyo + predPE + predOp.LAC + predPLT.u., levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
-roc_mean <- roc(labels, predMyo+predSCr+predPE+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<", ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
-
-lines(roc_mean, col = "blue", lwd = 2, xaxs = "i", yaxs = "i")  # 绘制平均ROC曲线
-legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
-# roc4 <- plot.roc(labels,predMyo+predSCr+predPE+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
-# rocthr <- ci(roc4, of="thresholds", thresholds="best")
-# plot(rocthr)
-
-# 提取AUC值
-auc_values <- sapply(roc_boot, function(roc_obj) auc(roc_obj))
-#print(auc_values)
-
-# 计算AUC均值
-auc_mean <- mean(auc_values)
-print(auc_mean)
-
-# 计算AUC标准差
-auc_sd <- sd(auc_values)
-print(auc_sd)
-
-text(x = 0.225,y = 0.5,
-     labels = "AUC Mean",
-     cex = 1,
-     col = "black")
-#text(x = 0.225,y = 0.4,
-#     labels = "AUC SD",
-#     cex = 1,
-#     col = "black")
-
-text(x = 0.1,y = 0.5,
-     labels = round(auc_mean,5),
-     cex = 1,
-     col = "black")
-#text(x = 0.1,y = 0.4,
-#     labels = round(auc_sd,5),
-#     cex = 1,
-#     col = "black")
-
-dev.off()
-
-roc_mean
+# 
+# #GLM 统计 对应 ROC graph optional
+# pred <- fitted(final_mod)
+# perdic <- prediction(pred,df$AKI)
+# perf <- performance(perdic,"tpr","fpr")
+# plot(perf,lwd=2, xaxs = "i", yaxs = "i")
+# abline(0,1,lty=2)
+# 
+# #Bootstrap 抽样统计
+# #Bootstrap简单交叉验证
+# form.bestglm<-as.formula(input_formula)
+# train.control_7 <-trainControl(method = "boot",
+#                                number=1000)
+# set.seed(1)
+# LogMod7 <- train(form.bestglm, 
+#                  data=df, 
+#                  trControl=train.control_7, 
+#                  method="glm")
+# sink(paste(output_dir,"Bootstrap GLM Accurarcy Kappa.txt"), split=TRUE)  # 控制台同样输出
+# LogMod7
+# sink()
+# 
+# train.control_8 <-trainControl(method = "boot",
+#                                number=1000,
+#                                classProbs=TRUE,
+#                                summaryFunction=twoClassSummary)
+# set.seed(1)
+# LogMod8 <- train(form.bestglm, 
+#                  data=df, 
+#                  trControl=train.control_8, 
+#                  method="glm")
+# sink(paste(output_dir,"Bootstrap GLM ROC Sens Spec.txt"), split=TRUE)  # 控制台同样输出
+# LogMod8
+# sink()
+# 
+# #bootstrap 抽样1000次 校验曲线
+# png(filename=paste(output_dir,"Bootstrap_CAL.png"), ,width=6*600,height=6*600, res=72*6)
+# cal<-calibrate(fit, method = 'boot', B=1000, data = df)
+# plot(cal,
+#      xlim=c(0,1.0),ylim=c(0,1.0),
+#      xlab = "Predicted Probability",
+#      ylab = "Observed Probability",
+#      xaxs = "i", yaxs = "i"
+# )
+# #text(x = 0.3,y = 0.85,
+# #     labels = "Hosmer and Lemeshow:",
+# #     cex = 1,
+# #     col = "black")
+# #text(x = 0.3,y = 0.75,
+# #     labels = "p-value = 0.8084",
+# #     cex = 1,
+# #     col = "black")
+# dev.off()
+# 
+# #bootstrap 抽样1000次 ROC曲线
+# png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=6*600,height=6*600, res=72*6)
+# 
+# predCPBHbMin <- df$CPBHbMin
+# predSurgeryTypes <- df$SurgeryTypes
+# predAge <- as.numeric(df$Age)
+# predCHD <- df$CHD
+# predCPBtime <- as.numeric(df$CPBtime)
+# predLastLac <- as.numeric(df$LastLac)
+# 
+# labels <- df$AKI
+# n_bootstraps <- 1000  # 设定bootstrap次数
+# roc_boot <- NULL  # 存储每次bootstrap的ROC曲线
+# dca_boot <- NULL
+# 
+# for (i in 1:n_bootstraps) {
+#   # 从原始数据中进行有放回抽样
+#   boot_indices <- sample(length(labels), replace = TRUE)
+#   boot_labels <- labels[boot_indices]
+#   boot_predCPBHbMin <- predCPBHbMin[boot_indices]
+#   boot_predSurgeryTypes <- predSurgeryTypes[boot_indices]
+#   boot_predAge <- predAge[boot_indices]
+#   boot_predCHD <- predCHD[boot_indices]
+#   boot_predCPBtime <- predCPBtime[boot_indices]
+#   boot_predLastLac <- predLastLac[boot_indices]
+# 
+#   # 计算bootstrap样本的ROC曲线
+#   # roc_boot[[i]] <- roc(boot_labels, boot_predhs.TnT + boot_predSCr + boot_predMyo + boot_predSurgeryTypes + boot_predOp.LAC + boot_predPLT.u., levels=c("No","Yes"), direction = "<")
+#   roc_boot[[i]] <- roc(boot_labels, boot_predCPBHbMin + boot_predSurgeryTypes + boot_predAge + boot_predCHD + boot_predCPBtime + boot_predLastLac)
+# }
+# 
+# plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate", xaxs = "i", yaxs = "i",legacy.axes=TRUE)
+# 
+# for (i in 1:n_bootstraps) {
+#   lines(roc_boot[[i]], col = "grey", alpha = 0.2)
+# }
+# 
+# # 汇总所有bootstrap样本的ROC曲线
+# #roc_mean <- roc(labels,predhs.TnT + predSCr + predMyo + predSurgeryTypes + predOp.LAC + predPLT.u., levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+# roc_mean <- roc(labels, predCPBHbMin+predSCr+predSurgeryTypes+predAge+predCHD+predCPBtime+predLastLac, ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+# 
+# lines(roc_mean, col = "blue", lwd = 2, xaxs = "i", yaxs = "i")  # 绘制平均ROC曲线
+# legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
+# # roc4 <- plot.roc(labels,predMyo+predSCr+predSurgeryTypes+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+# # rocthr <- ci(roc4, of="thresholds", thresholds="best")
+# # plot(rocthr)
+# 
+# # 提取AUC值
+# auc_values <- sapply(roc_boot, function(roc_obj) auc(roc_obj))
+# #print(auc_values)
+# 
+# # 计算AUC均值
+# auc_mean <- mean(auc_values)
+# print(auc_mean)
+# 
+# # 计算AUC标准差
+# auc_sd <- sd(auc_values)
+# print(auc_sd)
+# 
+# text(x = 0.225,y = 0.5,
+#      labels = "AUC Mean",
+#      cex = 1,
+#      col = "black")
+# #text(x = 0.225,y = 0.4,
+# #     labels = "AUC SD",
+# #     cex = 1,
+# #     col = "black")
+# 
+# text(x = 0.1,y = 0.5,
+#      labels = round(auc_mean,5),
+#      cex = 1,
+#      col = "black")
+# #text(x = 0.1,y = 0.4,
+# #     labels = round(auc_sd,5),
+# #     cex = 1,
+# #     col = "black")
+# 
+# dev.off()
+# 
+# roc_mean
 ##############################################################################################
 
 ##############################################################################################
