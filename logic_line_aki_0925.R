@@ -91,7 +91,7 @@ testflag <- 0
 #unlink("F:/project/rstudio/logic/0711-0", recursive = TRUE)  
 input_excel <- "bloodpressure20250926.xlsx"
 #input_formula <- AKI~Myo+SCr+PE+PO.LAC+TrPLT
-input_formula <- AKI~CPBHbMin+SurgeryTypes+Age+CHD+CPBtime+LastLac
+input_formula <- AKI~CPBHbMin+Surgical.procedure+Age+CHD+CPB.time+Last.Lac
 
 output_dir <- "D:/Project/Rproject/logic/20250927/"
 # dir.create(output_dir)
@@ -114,11 +114,11 @@ print(sapply(df, class))
 
 #convert data
 df$AKI <- factor(df$AKI)
-df$SurgeryTypes <- factor(df$SurgeryTypes, levels = 1:5)
+df$Surgical.procedure <- factor(df$Surgical.procedure, levels = 1:5)
 df$CHD <- as.factor(df$CHD)
 df$Age <- as.numeric(df$Age)
-df$CPBtime <- as.numeric(df$CPBtime)
-df$LastLac <- as.numeric(df$LastLac)
+df$CPB.time <- as.numeric(df$CPB.time)
+df$Last.Lac <- as.numeric(df$Last.Lac)
 df$CPBHbMin <- as.numeric(df$CPBHbMin)
 
 # for (i in 1:354) {
@@ -496,11 +496,11 @@ formatFit(final_mod)
 # png(filename=paste(output_dir,"Bootstrap_ROC.png"), ,width=6*600,height=6*600, res=72*6)
 # 
 # predCPBHbMin <- df$CPBHbMin
-# predSurgeryTypes <- df$SurgeryTypes
+# predSurgical.procedure <- df$Surgical.procedure
 # predAge <- as.numeric(df$Age)
 # predCHD <- df$CHD
-# predCPBtime <- as.numeric(df$CPBtime)
-# predLastLac <- as.numeric(df$LastLac)
+# predCPB.time <- as.numeric(df$CPB.time)
+# predLast.Lac <- as.numeric(df$Last.Lac)
 # 
 # labels <- df$AKI
 # n_bootstraps <- 1000  # 设定bootstrap次数
@@ -512,15 +512,15 @@ formatFit(final_mod)
 #   boot_indices <- sample(length(labels), replace = TRUE)
 #   boot_labels <- labels[boot_indices]
 #   boot_predCPBHbMin <- predCPBHbMin[boot_indices]
-#   boot_predSurgeryTypes <- predSurgeryTypes[boot_indices]
+#   boot_predSurgical.procedure <- predSurgical.procedure[boot_indices]
 #   boot_predAge <- predAge[boot_indices]
 #   boot_predCHD <- predCHD[boot_indices]
-#   boot_predCPBtime <- predCPBtime[boot_indices]
-#   boot_predLastLac <- predLastLac[boot_indices]
+#   boot_predCPB.time <- predCPB.time[boot_indices]
+#   boot_predLast.Lac <- predLast.Lac[boot_indices]
 # 
 #   # 计算bootstrap样本的ROC曲线
-#   # roc_boot[[i]] <- roc(boot_labels, boot_predhs.TnT + boot_predSCr + boot_predMyo + boot_predSurgeryTypes + boot_predOp.LAC + boot_predPLT.u., levels=c("No","Yes"), direction = "<")
-#   roc_boot[[i]] <- roc(boot_labels, boot_predCPBHbMin + boot_predSurgeryTypes + boot_predAge + boot_predCHD + boot_predCPBtime + boot_predLastLac)
+#   # roc_boot[[i]] <- roc(boot_labels, boot_predhs.TnT + boot_predSCr + boot_predMyo + boot_predSurgical.procedure + boot_predOp.LAC + boot_predPLT.u., levels=c("No","Yes"), direction = "<")
+#   roc_boot[[i]] <- roc(boot_labels, boot_predCPBHbMin + boot_predSurgical.procedure + boot_predAge + boot_predCHD + boot_predCPB.time + boot_predLast.Lac)
 # }
 # 
 # plot(roc_boot[[1]], type = "n", main = "Bootstrap ROC Curve", xlab = "False Positive Rate", ylab = "True Positive Rate", xaxs = "i", yaxs = "i",legacy.axes=TRUE)
@@ -530,12 +530,12 @@ formatFit(final_mod)
 # }
 # 
 # # 汇总所有bootstrap样本的ROC曲线
-# #roc_mean <- roc(labels,predhs.TnT + predSCr + predMyo + predSurgeryTypes + predOp.LAC + predPLT.u., levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
-# roc_mean <- roc(labels, predCPBHbMin+predSCr+predSurgeryTypes+predAge+predCHD+predCPBtime+predLastLac, ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+# #roc_mean <- roc(labels,predhs.TnT + predSCr + predMyo + predSurgical.procedure + predOp.LAC + predPLT.u., levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+# roc_mean <- roc(labels, predCPBHbMin+predSCr+predSurgical.procedure+predAge+predCHD+predCPB.time+predLast.Lac, ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 # 
 # lines(roc_mean, col = "blue", lwd = 2, xaxs = "i", yaxs = "i")  # 绘制平均ROC曲线
 # legend("bottomright", legend = c("Bootstrap ROC", "Mean ROC"), col = c("grey", "blue"), lwd = c(1, 2), bty = "n")
-# # roc4 <- plot.roc(labels,predMyo+predSCr+predSurgeryTypes+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
+# # roc4 <- plot.roc(labels,predMyo+predSCr+predSurgical.procedure+predPO.LAC+predTrPLT, levels=c("No","Yes"), direction = "<",  ci=TRUE, print.auc=TRUE)  # 使用原始数据计算平均ROC曲线
 # # rocthr <- ci(roc4, of="thresholds", thresholds="best")
 # # plot(rocthr)
 # 

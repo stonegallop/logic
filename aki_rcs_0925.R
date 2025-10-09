@@ -129,7 +129,7 @@ library(Hmisc)
 numeric_vars <- c("CPBHbMin", "Age", "BMI", "Hb", "Hct", "Scr", "eGFR",
                   "CysC", "BUN", "UA", "ProLAC", "ProLVEF", "EuroScore",
                   "OperationDuration", "CPBtime", "CrosscLamptime",
-                  "LastLac", "MAP", "RBC", "UrineVolume")
+                  "LastLac", "MAP", "RBC", "UrineVolume", "CPB.time", "Crossclamp.time")
 # 
 # factor_vars <- c("SurgeryTypes", "Sex", "ASA", "NYHA", "Hypertension", 
 #                  "DM", "CHD", "CD", "PD", "HC", "CHF", "AF", "CLD", 
@@ -169,11 +169,12 @@ print(summary(df))
 
 # 构建模型（3节点RCS）
 fit <- lrm(AKI ~ rcs(CPBHbMin, 3) + 
-           SurgeryTypes+ Sex + Age + BMI + ASA + NYHA + Hypertension + DM +
-           CHD + CD + PVD + CHF + AF + CLD + CurrentSmoking + 
-           Antihypertensive + Anticoagulant + Hb + Hct + Scr + eGFR + CysC +
-           BUN + UA + ProLAC + ProLVEF + EuroScore +
-           OperationDuration + CPBtime + CrosscLamptime + LastLac + MAP + RBC + UrineVolume,
+           Sex + Age + BMI + ASA + NYHA + HBP + DM + Prior.cardiac.surgery +
+           CHD + CVD + AF + CLD + Current.smoking +  PH + ACEI_ARB + BBlockers + Diuretics +
+           CCB + Aspirin + Warfarin + Hb + Hct + Scr + eGFR + Cys.C +
+           BUN + UA + proLAC + Pro.LVEF + EuroScore + Urgent + Surgical.procedure + 
+           Operation.duration + CPB.time + Crossclamp.time + Last.Lac + MAP + RBC.transfusion + Urine.volume +
+           Admission.MAP + PreCPB.MAP + DuringCPB.MAP + PostCPB.MAP,
            data = df, x = TRUE, y = TRUE)
 
 
